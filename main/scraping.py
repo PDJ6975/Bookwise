@@ -66,6 +66,12 @@ def extraer_libros_quelibroleo(generos=None):
                             continue
                         url_libro = enlace.get('href', '')
                         
+                        # Portada: img dentro de a.left_side
+                        portada = ''
+                        img_tag = enlace.find('img')
+                        if img_tag:
+                            portada = img_tag.get('src', '')
+                        
                         # Título: div.col-lg-8 a span b
                         col_info = item.find('div', class_='col-lg-8')
                         if not col_info:
@@ -92,12 +98,13 @@ def extraer_libros_quelibroleo(generos=None):
                                 # Limpiar el enlace de "seguir leyendo"
                                 if sinopsis:
                                     sinopsis = sinopsis.split('...')[0] + '...' if '...' in sinopsis else sinopsis
+                        if not sinopsis:
+                            sinopsis = 'No disponible'
                         
                         # Estadísticas: div.estadisticas
                         estadisticas = item.find('div', class_='estadisticas')
                         valoracion = 0.0
                         num_votos = 0
-                        num_criticas = 0
                         
                         if estadisticas:
                             # Nota media: span
@@ -114,12 +121,6 @@ def extraer_libros_quelibroleo(generos=None):
                             if votos_tag:
                                 votos_text = votos_tag.get_text(strip=True)
                                 num_votos = int(''.join(filter(str.isdigit, votos_text)))
-                            
-                            # Número de críticas: i.numero_criticas a
-                            criticas_tag = estadisticas.find('i', class_='numero_criticas')
-                            if criticas_tag:
-                                criticas_text = criticas_tag.get_text(strip=True)
-                                num_criticas = int(''.join(filter(str.isdigit, criticas_text)))
                         
                         # Género formateado (capitalizar)
                         genero_formateado = genero.replace('-', ' ').title()
@@ -131,8 +132,8 @@ def extraer_libros_quelibroleo(generos=None):
                             'sinopsis': sinopsis,
                             'valoracion': valoracion,
                             'num_votos': num_votos,
-                            'num_criticas': num_criticas,
                             'url': url_libro,
+                            'portada': portada,
                             'fuente': 'quelibroleo'
                         })
                         
@@ -176,6 +177,14 @@ def extraer_libros_lecturalia():
                     if len(enlaces) < 2:
                         continue
                     
+                    # Portada: div.cover img
+                    portada = ''
+                    cover_div = li.find('div', class_='cover')
+                    if cover_div:
+                        img_tag = cover_div.find('img')
+                        if img_tag:
+                            portada = img_tag.get('src', '')
+                    
                     # Primer enlace: título y URL del libro
                     titulo = enlaces[0].get_text(strip=True)
                     url_libro = enlaces[0].get('href', '')
@@ -196,6 +205,7 @@ def extraer_libros_lecturalia():
                         'valoracion': libro_detalle.get('valoracion', 0.0),
                         'num_votos': libro_detalle.get('num_votos', 0),
                         'url': url_libro,
+                        'portada': portada,
                         'fuente': 'lecturalia'
                     })
                     
@@ -262,7 +272,9 @@ def extraer_detalle_libro(url_libro):
                 # Obtener todo el texto restante
                 sinopsis = text_div.get_text(separator=' ', strip=True)
                 
-                detalle['sinopsis'] = sinopsis.strip()
+                detalle['sinopsis'] = sinopsis.strip() if sinopsis.strip() else 'No disponible'
+        else:
+            detalle['sinopsis'] = 'No disponible'
         
     except Exception as e:
         print(f"  Error extrayendo detalle de {url_libro}: {e}")
@@ -279,16 +291,81 @@ def extraer_todos_libros(fuente='todo', generos_quelibroleo=None):
     """
     libros = []
     
-    if fuente in ['todo', 'quelibroleo']:
-        print("Extrayendo de QueLibroLeo...")
-        libros.extend(extraer_libros_quelibroleo(generos_quelibroleo))
-    
+    # Primero Lecturalia 
     if fuente in ['todo', 'lecturalia']:
         print("Extrayendo de Lecturalia...")
         libros.extend(extraer_libros_lecturalia())
     
+    # Luego QueLibroLeo 
+    if fuente in ['todo', 'quelibroleo']:
+        print("Extrayendo de QueLibroLeo...")
+        libros.extend(extraer_libros_quelibroleo(generos_quelibroleo))
+    
     print(f"Total libros extraídos: {len(libros)}")
     return libros
+
+
+def filtrar_duplicados(libros):
+    """Filtra libros duplicados basándose en título normalizado
+    
+    Mantiene el primer libro encontrado (prioriza Lecturalia si se extrae primero)
+    """
+    vistos = set()
+    unicos = []
+    duplicados = 0
+    
+    for libro in libros:
+        # Normalizar título: minúsculas, sin espacios extra, sin puntuación
+        titulo_norm = libro['titulo'].lower().strip()
+        titulo_norm = re.sub(r'[^a-záéíóúñü0-9\s]', '', titulo_norm)
+        titulo_norm = ' '.join(titulo_norm.split())  # Normalizar espacios
+        
+        if titulo_norm not in vistos:
+            vistos.add(titulo_norm)
+            unicos.append(libro)
+        else:
+            duplicados += 1
+    
+    print(f"Duplicados eliminados: {duplicados}")
+    print(f"Libros únicos: {len(unicos)}")
+    return unicos
+
+
+def verificar_libros(libros):
+    """Verifica que todos los libros tengan datos completos"""
+    campos_requeridos = ['titulo', 'autor', 'genero', 'valoracion', 'url', 'portada', 'fuente', 'sinopsis', 'num_votos']
+    
+    incompletos = []
+    sin_sinopsis = 0
+    
+    for i, libro in enumerate(libros):
+        faltantes = []
+        for campo in campos_requeridos:
+            valor = libro.get(campo)
+            if not valor and valor != 0:
+                faltantes.append(campo)
+        
+        if not libro.get('sinopsis'):
+            sin_sinopsis += 1
+        
+        if faltantes:
+            incompletos.append((i, libro.get('titulo', 'Sin título'), faltantes))
+    
+    # Mostrar resultados
+    print(f"\n=== VERIFICACIÓN ===")
+    print(f"Total libros: {len(libros)}")
+    print(f"Libros completos: {len(libros) - len(incompletos)}")
+    print(f"Libros incompletos: {len(incompletos)}")
+    print(f"Libros sin sinopsis: {sin_sinopsis}")
+    
+    if incompletos:
+        print(f"\nLibros con datos faltantes:")
+        for idx, titulo, faltantes in incompletos[:10]:  # Mostrar máx 10
+            print(f"  [{idx}] {titulo[:50]}: faltan {faltantes}")
+        if len(incompletos) > 10:
+            print(f"  ... y {len(incompletos) - 10} más")
+    
+    return len(incompletos) == 0
 
 
 def mostrar_libros(libros):
@@ -296,8 +373,9 @@ def mostrar_libros(libros):
     for libro in libros:
         print(f"\n{libro['titulo']} - {libro['autor']}")
         print(f"  Género: {libro['genero']}")
-        print(f"  Valoración: {libro['valoracion']} ({libro['num_votos']} votos)")
-        sinopsis = libro['sinopsis'][:100] if libro['sinopsis'] else '(sin sinopsis)'
+        print(f"  Valoración: {libro['valoracion']} ({libro.get('num_votos', 0)} votos)")
+        print(f"  Portada: {libro.get('portada', '(sin portada)')[:60]}...")
+        sinopsis = libro['sinopsis'][:100] if libro.get('sinopsis') else '(sin sinopsis)'
         print(f"  Sinopsis: {sinopsis}...")
 
 
@@ -327,4 +405,6 @@ if __name__ == '__main__':
     print()
     
     libros = extraer_todos_libros(fuente, generos)
+    libros = filtrar_duplicados(libros)
     mostrar_libros(libros)
+    verificar_libros(libros)
