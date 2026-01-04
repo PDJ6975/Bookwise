@@ -4,6 +4,7 @@ import urllib.request
 import re
 import os
 import ssl
+from generos import normalizar_genero_quelibroleo, normalizar_genero_lecturalia
 
 # Evitar error SSL
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
@@ -122,13 +123,13 @@ def extraer_libros_quelibroleo(generos=None):
                                 votos_text = votos_tag.get_text(strip=True)
                                 num_votos = int(''.join(filter(str.isdigit, votos_text)))
                         
-                        # Género formateado (capitalizar)
-                        genero_formateado = genero.replace('-', ' ').title()
+                        # Género normalizado usando el slug
+                        genero_normalizado = normalizar_genero_quelibroleo(genero)
                         
                         lista.append({
                             'titulo': titulo,
                             'autor': autor,
-                            'genero': genero_formateado,
+                            'genero': genero_normalizado,
                             'sinopsis': sinopsis,
                             'valoracion': valoracion,
                             'num_votos': num_votos,
@@ -200,7 +201,7 @@ def extraer_libros_lecturalia():
                     lista.append({
                         'titulo': titulo,
                         'autor': autor,
-                        'genero': libro_detalle.get('genero', 'Sin género'),
+                        'genero': normalizar_genero_lecturalia(libro_detalle.get('genero', 'Sin género')),
                         'sinopsis': libro_detalle.get('sinopsis', ''),
                         'valoracion': libro_detalle.get('valoracion', 0.0),
                         'num_votos': libro_detalle.get('num_votos', 0),
