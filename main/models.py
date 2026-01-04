@@ -18,10 +18,10 @@ class Valoracion(models.Model):
         max_length=500,
         verbose_name='Título del libro'
     )
-    puntuacion = models.IntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
+    puntuacion = models.FloatField(
+        validators=[MinValueValidator(1.0), MaxValueValidator(10.0)],
         verbose_name='Puntuación',
-        help_text='Valoración de 1 a 5 estrellas'
+        help_text='Valoración de 1.0 a 10.0 estrellas'
     )
     fecha = models.DateTimeField(
         auto_now_add=True,
