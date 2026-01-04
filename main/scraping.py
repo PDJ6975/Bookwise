@@ -11,6 +11,140 @@ if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
     ssl._create_default_https_context = ssl._create_unverified_context
 
 PAGINAS_LECTURALIA = 2
+PAGINAS_QUELIBROLEO = 3
+
+# Lista de géneros de QueLibroLeo (17 géneros -> 3 páginas / género)
+GENEROS_QUELIBROLEO = [
+    'biografias-memorias',
+    'clasicos-de-la-literatura',
+    'comics-novela-grafica',
+    'economia-empresa-marketing',
+    'ensayo',
+    'fantastica-ciencia-ficcion',
+    'ficcion-literaria',
+    'historica-y-aventuras',
+    'humor',
+    'infantil-y-juvenil',
+    'lecturas-complementarias',
+    'literatura-contemporanea',
+    'narrativa',
+    'no-ficcion',
+    'novela-negra-intriga-terror',
+    'poesia-teatro',
+    'romantica-erotica'
+]
+
+
+def extraer_libros_quelibroleo(generos=None):
+    """Extrae libros mejor valorados de QueLibroLeo por género
+    
+    Args:
+        generos: Lista de géneros a extraer. Si es None, extrae todos.
+    """
+    lista = []
+    generos_a_extraer = generos if generos else GENEROS_QUELIBROLEO
+    
+    for genero in generos_a_extraer:
+        print(f"  Extrayendo género: {genero}...")
+        
+        for p in range(1, PAGINAS_QUELIBROLEO + 1):
+            url = f"https://quelibroleo.com/mejores-genero/{genero}?sort=&page={p}"
+            
+            try:
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                f = urllib.request.urlopen(req)
+                s = BeautifulSoup(f, 'lxml')
+                
+                # Los libros están en: div.item
+                items = s.find_all('div', class_='item')
+                
+                for item in items:
+                    try:
+                        # URL del libro
+                        enlace = item.find('a', class_='left_side')
+                        if not enlace:
+                            continue
+                        url_libro = enlace.get('href', '')
+                        
+                        # Título: div.col-lg-8 a span b
+                        col_info = item.find('div', class_='col-lg-8')
+                        if not col_info:
+                            continue
+                        
+                        titulo_tag = col_info.find('b')
+                        titulo = titulo_tag.get_text(strip=True) if titulo_tag else ''
+                        
+                        # Autor: div.col-lg-8 small a
+                        autor_tag = col_info.find('small')
+                        if autor_tag:
+                            autor_link = autor_tag.find('a')
+                            autor = autor_link.get_text(strip=True) if autor_link else autor_tag.get_text(strip=True)
+                        else:
+                            autor = ''
+                        
+                        # Sinopsis: div.tab-pane div.text p
+                        sinopsis = ''
+                        text_div = item.find('div', class_='text')
+                        if text_div:
+                            p_tag = text_div.find('p')
+                            if p_tag:
+                                sinopsis = p_tag.get_text(strip=True)
+                                # Limpiar el enlace de "seguir leyendo"
+                                if sinopsis:
+                                    sinopsis = sinopsis.split('...')[0] + '...' if '...' in sinopsis else sinopsis
+                        
+                        # Estadísticas: div.estadisticas
+                        estadisticas = item.find('div', class_='estadisticas')
+                        valoracion = 0.0
+                        num_votos = 0
+                        num_criticas = 0
+                        
+                        if estadisticas:
+                            # Nota media: span
+                            nota_span = estadisticas.find('span')
+                            if nota_span:
+                                nota_text = nota_span.get_text(strip=True).replace(',', '.')
+                                try:
+                                    valoracion = float(nota_text)
+                                except:
+                                    pass
+                            
+                            # Número de votos: i.numero_votos a
+                            votos_tag = estadisticas.find('i', class_='numero_votos')
+                            if votos_tag:
+                                votos_text = votos_tag.get_text(strip=True)
+                                num_votos = int(''.join(filter(str.isdigit, votos_text)))
+                            
+                            # Número de críticas: i.numero_criticas a
+                            criticas_tag = estadisticas.find('i', class_='numero_criticas')
+                            if criticas_tag:
+                                criticas_text = criticas_tag.get_text(strip=True)
+                                num_criticas = int(''.join(filter(str.isdigit, criticas_text)))
+                        
+                        # Género formateado (capitalizar)
+                        genero_formateado = genero.replace('-', ' ').title()
+                        
+                        lista.append({
+                            'titulo': titulo,
+                            'autor': autor,
+                            'genero': genero_formateado,
+                            'sinopsis': sinopsis,
+                            'valoracion': valoracion,
+                            'num_votos': num_votos,
+                            'num_criticas': num_criticas,
+                            'url': url_libro,
+                            'fuente': 'quelibroleo'
+                        })
+                        
+                    except Exception as e:
+                        print(f"    Error extrayendo libro: {e}")
+                        continue
+                        
+            except Exception as e:
+                print(f"    Error en página {p} de {genero}: {e}")
+                continue
+    
+    return lista
 
 
 def extraer_libros_lecturalia():
@@ -136,24 +270,61 @@ def extraer_detalle_libro(url_libro):
     return detalle
 
 
-def extraer_todos_libros():
-    """Extrae libros de todas las fuentes"""
+def extraer_todos_libros(fuente='todo', generos_quelibroleo=None):
+    """Extrae libros de las fuentes especificadas
+    
+    Args:
+        fuente: 'todo', 'lecturalia' o 'quelibroleo'
+        generos_quelibroleo: Lista de géneros para QueLibroLeo (solo si fuente incluye quelibroleo)
+    """
     libros = []
     
-    print("Extrayendo de Lecturalia...")
-    libros.extend(extraer_libros_lecturalia())
+    if fuente in ['todo', 'quelibroleo']:
+        print("Extrayendo de QueLibroLeo...")
+        libros.extend(extraer_libros_quelibroleo(generos_quelibroleo))
     
-    # TODO: Añadir aquí la extracción de Quelibroleo cuando esté lista
+    if fuente in ['todo', 'lecturalia']:
+        print("Extrayendo de Lecturalia...")
+        libros.extend(extraer_libros_lecturalia())
     
     print(f"Total libros extraídos: {len(libros)}")
     return libros
 
 
-# Para probar el scraping directamente
-if __name__ == '__main__':
-    libros = extraer_todos_libros()
-    for libro in libros[:10]: 
+def mostrar_libros(libros):
+    """Muestra los libros extraídos"""
+    for libro in libros:
         print(f"\n{libro['titulo']} - {libro['autor']}")
         print(f"  Género: {libro['genero']}")
         print(f"  Valoración: {libro['valoracion']} ({libro['num_votos']} votos)")
-        print(f"  Sinopsis: {libro['sinopsis'][:100]}...")
+        sinopsis = libro['sinopsis'][:100] if libro['sinopsis'] else '(sin sinopsis)'
+        print(f"  Sinopsis: {sinopsis}...")
+
+
+# Para probar el scraping directamente
+if __name__ == '__main__':
+    import sys
+    
+    # Uso: python scraping.py [fuente] [genero]
+    # Ejemplos:
+    #   python scraping.py                     -> Extrae todo
+    #   python scraping.py lecturalia          -> Solo Lecturalia
+    #   python scraping.py quelibroleo         -> QueLibroLeo (todos los géneros)
+    #   python scraping.py quelibroleo humor   -> QueLibroLeo solo género 'humor'
+    
+    fuente = 'todo'
+    generos = None
+    
+    if len(sys.argv) >= 2:
+        fuente = sys.argv[1]
+    
+    if len(sys.argv) >= 3 and fuente == 'quelibroleo':
+        generos = [sys.argv[2]]
+    
+    print(f"\n=== Scraping: {fuente} ===")
+    if generos:
+        print(f"    Géneros: {generos}")
+    print()
+    
+    libros = extraer_todos_libros(fuente, generos)
+    mostrar_libros(libros)
