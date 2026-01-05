@@ -1,23 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>BookWise - Libros</title>
-</head>
-<body>
-    <h1>Todos los Libros</h1>
+{% extends 'base.html' %}
 
-    <ul>
-    {% for libro in libros %}
-        <li>
-            <strong>{{ libro.titulo }}</strong> - {{ libro.autor }}
-            <br>
-            Género: {{ libro.genero }}
-            <br>
-            Valoración: {{ libro.valoracion }}
-        </li>
-    {% empty %}
-        <li>No hay libros en el índice</li>
-    {% endfor %}
-    </ul>
-</body>
-</html>
+{% block title %}BookWise - Descubrir{% endblock %}
+
+{% block content %}
+<h1>Descubrir</h1>
+
+<h2>Recomendaciones</h2>
+<p>(Vacío por ahora - mostrar 4 recomendaciones)</p>
+
+<h2>Categorías</h2>
+<ul>
+{% for genero in generos %}
+    <li>{{ genero }}</li>
+{% empty %}
+    <li>No hay categorías disponibles</li>
+{% endfor %}
+</ul>
+{% endblock %}

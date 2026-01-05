@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}BookWise{% endblock %}</title>
+</head>
+<body>
+    <div style="display: flex;">
+        <!-- Menú lateral -->
+        <nav style="width: 200px; border-right: 1px solid #ccc; padding: 20px;">
+            <h2>BookWise</h2>
+            <ul style="list-style: none; padding: 0;">
+                <li><a href="{% url 'index' %}">Descubrir</a></li>
+                <li><a href="{% url 'galeria' %}">Galería</a></li>
+                <li><a href="{% url 'mi_libreria' %}">Mi Librería</a></li>
+                <li><a href="{% url 'login' %}">Iniciar sesión</a></li>
+            </ul>
+            <div>
+                <p>(Logo de la app)</p>
+            </div>
+        </nav>
+
+        <!-- Contenido principal con navbar -->
+        <div style="flex: 1;">
+            <!-- Navbar horizontal -->
+            <header style="border-bottom: 1px solid #ccc; padding: 15px 20px; text-align: right;">
+                {% if user.is_authenticated %}
+                    <span>{{ user.username }}</span>
+                {% else %}
+                    <span>Invitado</span>
+                {% endif %}
+            </header>
+
+            <!-- Contenido -->
+            <main style="padding: 20px;">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>
