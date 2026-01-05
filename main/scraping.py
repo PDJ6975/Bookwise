@@ -4,7 +4,7 @@ import urllib.request
 import re
 import os
 import ssl
-from generos import normalizar_genero_quelibroleo, normalizar_genero_lecturalia
+from .generos import normalizar_genero_quelibroleo, normalizar_genero_lecturalia
 
 # Evitar error SSL
 if (not os.environ.get('PYTHONHTTPSVERIFY', '') and

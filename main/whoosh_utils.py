@@ -4,7 +4,7 @@ from whoosh.index import create_in, open_dir, exists_in
 from whoosh.fields import Schema, TEXT, ID, NUMERIC, KEYWORD
 from whoosh.qparser import QueryParser, MultifieldParser
 from whoosh.query import Every
-from scraping import extraer_todos_libros, filtrar_duplicados
+from .scraping import extraer_todos_libros, filtrar_duplicados
 
 # Directorio del índice
 INDEX_DIR = os.path.join(os.path.dirname(__file__), '..', 'Index')
