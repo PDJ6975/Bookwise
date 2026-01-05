@@ -1,11 +1,22 @@
 from django.shortcuts import render
-from main.whoosh_utils import obtener_generos
+from main.whoosh_utils import obtener_generos, buscar_por_genero
 
 
 def index(request):
     """Vista principal - Descubrir"""
     generos = obtener_generos()
-    return render(request, 'main/index.html', {'generos': generos})
+
+    # Obtener un libro representativo para cada género
+    categorias = []
+    for genero in generos:
+        libros = buscar_por_genero(genero, limite=1)
+        if libros:
+            categorias.append({
+                'nombre': genero,
+                'libro': libros[0]
+            })
+
+    return render(request, 'main/index.html', {'categorias': categorias})
 
 
 def galeria(request):

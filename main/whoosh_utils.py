@@ -27,7 +27,7 @@ def get_schema():
     return Schema(
         titulo=TEXT(stored=True),
         autor=TEXT(stored=True),
-        genero=KEYWORD(stored=True, commas=True, lowercase=True),
+        genero=TEXT(stored=True),
         sinopsis=TEXT(stored=True),
         valoracion=NUMERIC(stored=True, numtype=float),
         num_votos=NUMERIC(stored=True, numtype=int),
@@ -146,7 +146,7 @@ def obtener_generos():
     for libro in libros:
         if libro.get('genero'):
             generos.add(libro['genero'])
-    
+
     return sorted(list(generos))
 
 
