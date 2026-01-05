@@ -1,8 +1,111 @@
 {% extends 'base.html' %}
 
-{% block title %}BookWise - Galería{% endblock %}
+{% block title %}
+{% if genero_filtrado %}{{ genero_filtrado }} - BookWise{% else %}Galería - BookWise{% endif %}
+{% endblock %}
 
 {% block content %}
-<h1>Galería</h1>
-<p>(Página de galería - por implementar)</p>
+{% if genero_filtrado %}
+<div class="mb-6">
+    <a href="{% url 'index' %}" class="btn btn-sm btn-ghost">← Volver a todas las categorías</a>
+</div>
+<h1 class="text-3xl font-bold mb-6">{{ genero_filtrado }}</h1>
+{% else %}
+<h1 class="text-3xl font-bold mb-6">Catálogo de Libros</h1>
+{% endif %}
+
+{% for genero, libros in libros_por_genero.items %}
+<section class="mb-10">
+    <h2 class="text-2xl font-bold mb-4">{{ genero }}</h2>
+    
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {% for libro in libros %}
+        <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow" 
+             onclick="document.getElementById('modal_{{ forloop.parentloop.counter }}_{{ forloop.counter }}').showModal()">
+            <figure class="px-2 pt-2">
+                {% if libro.portada %}
+                <img src="{{ libro.portada }}" alt="{{ libro.titulo }}" class="rounded-lg h-48 w-full object-cover">
+                {% else %}
+                <div class="rounded-lg h-48 w-full bg-base-300 flex items-center justify-center">
+                    <span class="text-4xl">📖</span>
+                </div>
+                {% endif %}
+            </figure>
+            <div class="card-body p-3">
+                <h3 class="card-title text-sm line-clamp-2">{{ libro.titulo }}</h3>
+                <p class="text-xs text-base-content/70 line-clamp-1">{{ libro.autor }}</p>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-warning">★</span>
+                    <span class="text-sm font-semibold">{{ libro.valoracion }}/5</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal para este libro -->
+        <dialog id="modal_{{ forloop.parentloop.counter }}_{{ forloop.counter }}" class="modal">
+            <div class="modal-box max-w-2xl">
+                <form method="dialog">
+                    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                </form>
+                
+                <div class="flex gap-6">
+                    <!-- Portada -->
+                    <div class="flex-shrink-0">
+                        {% if libro.portada %}
+                        <img src="{{ libro.portada }}" alt="{{ libro.titulo }}" class="rounded-lg w-40 h-60 object-cover">
+                        {% else %}
+                        <div class="rounded-lg w-40 h-60 bg-base-300 flex items-center justify-center">
+                            <span class="text-6xl">📖</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Información -->
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold mb-2">{{ libro.titulo }}</h3>
+                        <p class="text-base-content/70 mb-2">{{ libro.autor }}</p>
+                        
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="badge badge-outline">{{ libro.genero }}</span>
+                            <div class="flex items-center gap-1">
+                                <span class="text-warning">★</span>
+                                <span class="font-semibold">{{ libro.valoracion }}/5</span>
+                                <span class="text-xs text-base-content/50">({{ libro.num_votos }} votos)</span>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm mb-4">
+                            {% if libro.sinopsis %}
+                                {{ libro.sinopsis|truncatewords:80 }}
+                            {% else %}
+                                <em>Sin sinopsis disponible</em>
+                            {% endif %}
+                        </p>
+                        
+                        <div class="card-actions">
+                            <button class="btn btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Añadir a Mi Librería
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
+        {% endfor %}
+    </div>
+</section>
+{% empty %}
+<div class="card bg-base-100 shadow-sm">
+    <div class="card-body items-center text-center">
+        <h2 class="card-title">No hay libros disponibles</h2>
+        <p>Ejecuta el scraping para cargar libros.</p>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
