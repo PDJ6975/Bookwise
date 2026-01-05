@@ -10,6 +10,18 @@ from .scraping import extraer_todos_libros, filtrar_duplicados
 INDEX_DIR = os.path.join(os.path.dirname(__file__), '..', 'Index')
 
 
+def normalizar_valoracion(valoracion):
+    """Normaliza valoración de escala 1-10 a escala 1-5 con incrementos de 0.5"""
+    if valoracion is None or valoracion == 0:
+        return 0.0
+
+    # Convertir de escala 1-10 a escala 1-5
+    valor_5 = valoracion / 2.0
+
+    # Redondear al 0.5 más cercano
+    return round(valor_5 * 2) / 2
+
+
 def get_schema():
     """Define el schema del índice de libros"""
     return Schema(
@@ -59,7 +71,7 @@ def indexar_libros(libros):
             autor=libro['autor'],
             genero=libro['genero'],
             sinopsis=libro['sinopsis'],
-            valoracion=float(libro.get('valoracion', 0)),
+            valoracion=normalizar_valoracion(float(libro.get('valoracion', 0))),
             num_votos=int(libro.get('num_votos', 0)),
             url=libro['url'],
             portada=libro.get('portada', ''),
