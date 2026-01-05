@@ -3,6 +3,35 @@
 {% block title %}BookWise - Iniciar sesión{% endblock %}
 
 {% block content %}
-<h1>Iniciar sesión</h1>
-<p>(Página de login - por implementar)</p>
+<div class="flex justify-center items-center min-h-[60vh]">
+    <div class="card bg-base-100 shadow-xl w-full max-w-md">
+        <div class="card-body">
+            <h2 class="card-title text-2xl justify-center mb-4">Iniciar Sesión</h2>
+            
+            <form method="post">
+                {% csrf_token %}
+                <fieldset class="fieldset mb-4">
+                    <legend class="fieldset-legend">Usuario</legend>
+                    <input type="text" name="username" class="input w-full" placeholder="Tu nombre de usuario" required />
+                </fieldset>
+                
+                <fieldset class="fieldset mb-6">
+                    <legend class="fieldset-legend">Contraseña</legend>
+                    <input type="password" name="password" class="input w-full" placeholder="••••••••" required />
+                </fieldset>
+                
+                <div class="card-actions justify-center">
+                    <button type="submit" class="btn btn-primary w-full">Iniciar Sesión</button>
+                </div>
+            </form>
+            
+            <div class="divider">O</div>
+            
+            <p class="text-center">
+                ¿No tienes cuenta? 
+                <a href="{% url 'registro' %}" class="link link-primary">Regístrate aquí</a>
+            </p>
+        </div>
+    </div>
+</div>
 {% endblock %}

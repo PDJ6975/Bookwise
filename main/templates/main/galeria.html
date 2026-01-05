@@ -83,12 +83,21 @@
                         </p>
                         
                         <div class="card-actions">
-                            <button class="btn btn-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                </svg>
-                                Añadir a Mi Librería
-                            </button>
+                            <form action="{% url 'agregar_libro' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="titulo" value="{{ libro.titulo }}">
+                                <input type="hidden" name="autor" value="{{ libro.autor }}">
+                                <input type="hidden" name="portada" value="{{ libro.portada }}">
+                                <input type="hidden" name="genero" value="{{ libro.genero }}">
+                                <input type="hidden" name="sinopsis" value="{{ libro.sinopsis }}">
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Añadir a Mi Librería
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

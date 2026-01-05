@@ -38,6 +38,41 @@
             
             <!-- Contenido de la página -->
             <main class="p-6 flex-1">
+                {% if messages %}
+                <div class="mb-4" id="alerts-container">
+                    {% for message in messages %}
+                    <div role="alert" class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% else %}alert-info{% endif %} mb-2 alert-dismissible">
+                        {% if message.tags == 'error' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {% elif message.tags == 'success' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="h-6 w-6 shrink-0 stroke-current">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        {% endif %}
+                        <span>{{ message }}</span>
+                        <button type="button" class="btn btn-sm btn-ghost" onclick="this.parentElement.remove()">✕</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <script>
+                    // Auto-cerrar alertas después de 3 segundos
+                    setTimeout(() => {
+                        const container = document.getElementById('alerts-container');
+                        if (container) {
+                            container.style.transition = 'opacity 0.5s';
+                            container.style.opacity = '0';
+                            setTimeout(() => container.remove(), 500);
+                        }
+                    }, 3000);
+                </script>
+                {% endif %}
+                
                 {% block content %}
                 {% endblock %}
             </main>
@@ -86,14 +121,15 @@
                 <!-- Sección de cuenta -->
                 <ul>
                     {% if user.is_authenticated %}
-                    <li>
-                        <a href="#">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Ajustes
-                        </a>
+                    <li class="mb-2">
+                        <div class="flex items-center gap-2 px-4 py-2 bg-base-200 rounded-lg">
+                            <div class="avatar placeholder">
+                                <div class="bg-primary text-primary-content rounded-full w-8">
+                                    <span class="text-sm">{{ user.username|first|upper }}</span>
+                                </div>
+                            </div>
+                            <span class="font-medium">{{ user.username }}</span>
+                        </div>
                     </li>
                     <li>
                         <a href="{% url 'logout' %}">
@@ -110,6 +146,14 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                             </svg>
                             Iniciar sesión
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'registro' %}" class="{% if request.resolver_match.url_name == 'registro' %}active{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            Registrarse
                         </a>
                     </li>
                     {% endif %}

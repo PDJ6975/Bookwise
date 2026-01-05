@@ -3,6 +3,170 @@
 {% block title %}BookWise - Mi Librería{% endblock %}
 
 {% block content %}
-<h1>Mi Librería</h1>
-<p>(Página de mi librería - por implementar)</p>
+<h1 class="text-3xl font-bold mb-6">Mi Librería</h1>
+
+{% if no_autenticado %}
+<!-- Mensaje para usuarios no autenticados -->
+<div class="flex justify-center">
+    <div class="card card-side bg-neutral text-neutral-content shadow-sm max-w-2xl w-full">
+        <figure class="pl-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+        </figure>
+        <div class="card-body">
+            <h2 class="card-title text-2xl">Inicia sesión para guardar libros</h2>
+            <p class="text-lg">Crea tu librería personal, guarda libros y lleva un registro de tus lecturas.</p>
+            <div class="card-actions justify-end">
+                <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Iniciar Sesión</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+
+<!-- Sección Por Leer -->
+<section class="mb-12">
+    <div class="flex items-center gap-3 mb-4">
+        <h2 class="text-2xl font-bold">📚 Por Leer</h2>
+        <span class="badge badge-lg">{{ por_leer|length }}</span>
+    </div>
+    
+    {% if por_leer %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {% for libro in por_leer %}
+        <div class="card bg-base-100 shadow-sm">
+            <figure class="px-2 pt-2">
+                {% if libro.portada %}
+                <img src="{{ libro.portada }}" alt="{{ libro.titulo }}" class="rounded-lg h-48 w-full object-cover">
+                {% else %}
+                <div class="rounded-lg h-48 w-full bg-base-300 flex items-center justify-center">
+                    <span class="text-4xl">📖</span>
+                </div>
+                {% endif %}
+            </figure>
+            <div class="card-body p-3">
+                <h3 class="card-title text-sm line-clamp-2">{{ libro.titulo }}</h3>
+                <p class="text-xs text-base-content/70 line-clamp-1">{{ libro.autor }}</p>
+                <div class="card-actions justify-between mt-2">
+                    <button class="btn btn-xs btn-primary" onclick="document.getElementById('modal_leido_{{ libro.id }}').showModal()">
+                        ✓ Leído
+                    </button>
+                    <form action="{% url 'eliminar_libro' libro.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-xs btn-ghost text-error">✕</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal para marcar como leído -->
+        <dialog id="modal_leido_{{ libro.id }}" class="modal">
+            <div class="modal-box">
+                <form method="dialog">
+                    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                </form>
+                <h3 class="text-xl font-bold mb-4">¿Has terminado de leer este libro?</h3>
+                <div class="flex gap-4 mb-4">
+                    {% if libro.portada %}
+                    <img src="{{ libro.portada }}" alt="{{ libro.titulo }}" class="rounded-lg w-20 h-28 object-cover">
+                    {% endif %}
+                    <div>
+                        <p class="font-semibold">{{ libro.titulo }}</p>
+                        <p class="text-sm text-base-content/70">{{ libro.autor }}</p>
+                    </div>
+                </div>
+                
+                <form action="{% url 'marcar_leido' libro.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text text-lg">¿Qué valoración le das?</span>
+                        </label>
+                        <div class="rating rating-lg">
+                            <input type="radio" name="valoracion" value="1" class="mask mask-star-2 bg-warning" />
+                            <input type="radio" name="valoracion" value="2" class="mask mask-star-2 bg-warning" />
+                            <input type="radio" name="valoracion" value="3" class="mask mask-star-2 bg-warning" checked />
+                            <input type="radio" name="valoracion" value="4" class="mask mask-star-2 bg-warning" />
+                            <input type="radio" name="valoracion" value="5" class="mask mask-star-2 bg-warning" />
+                        </div>
+                    </div>
+                    <div class="modal-action">
+                        <button type="submit" class="btn btn-primary">Guardar como Leído</button>
+                    </div>
+                </form>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card bg-base-200 shadow-sm">
+        <div class="card-body items-center text-center py-12">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <h3 class="text-xl font-bold mb-2">No tienes libros pendientes</h3>
+            <p class="text-base-content/70 mb-4">Explora el catálogo y añade libros que quieras leer</p>
+            <a href="{% url 'index' %}" class="btn btn-primary">Explorar Libros</a>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+<!-- Sección Leídos -->
+<section>
+    <div class="flex items-center gap-3 mb-4">
+        <h2 class="text-2xl font-bold">✅ Leídos</h2>
+        <span class="badge badge-lg badge-success">{{ leidos|length }}</span>
+    </div>
+    
+    {% if leidos %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {% for libro in leidos %}
+        <div class="card bg-base-100 shadow-sm">
+            <figure class="px-2 pt-2 relative">
+                {% if libro.portada %}
+                <img src="{{ libro.portada }}" alt="{{ libro.titulo }}" class="rounded-lg h-48 w-full object-cover">
+                {% else %}
+                <div class="rounded-lg h-48 w-full bg-base-300 flex items-center justify-center">
+                    <span class="text-4xl">📖</span>
+                </div>
+                {% endif %}
+                {% if libro.valoracion %}
+                <div class="absolute top-4 right-4 badge badge-warning gap-1">
+                    ★ {{ libro.valoracion }}
+                </div>
+                {% endif %}
+            </figure>
+            <div class="card-body p-3">
+                <h3 class="card-title text-sm line-clamp-2">{{ libro.titulo }}</h3>
+                <p class="text-xs text-base-content/70 line-clamp-1">{{ libro.autor }}</p>
+                <div class="card-actions justify-end mt-2">
+                    <form action="{% url 'eliminar_libro' libro.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-xs btn-ghost text-error">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card bg-base-200 shadow-sm">
+        <div class="card-body items-center text-center py-12">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="text-xl font-bold mb-2">Aún no has terminado ningún libro</h3>
+            <p class="text-base-content/70">Marca como leídos los libros que vayas terminando</p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+{% endif %}
 {% endblock %}

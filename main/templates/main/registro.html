@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}BookWise - Registro{% endblock %}
+
+{% block content %}
+<div class="flex justify-center items-center min-h-[60vh]">
+    <div class="card bg-base-100 shadow-xl w-full max-w-md">
+        <div class="card-body">
+            <h2 class="card-title text-2xl justify-center mb-4">Crear Cuenta</h2>
+            
+            <form method="post">
+                {% csrf_token %}
+                <fieldset class="fieldset mb-4">
+                    <legend class="fieldset-legend">Usuario</legend>
+                    <input type="text" name="username" class="input w-full" placeholder="Elige un nombre de usuario" required />
+                </fieldset>
+                
+                <fieldset class="fieldset mb-4">
+                    <legend class="fieldset-legend">Email</legend>
+                    <input type="email" name="email" class="input w-full" placeholder="tu@email.com" />
+                    <p class="label">Opcional</p>
+                </fieldset>
+                
+                <fieldset class="fieldset mb-4">
+                    <legend class="fieldset-legend">Contraseña</legend>
+                    <input type="password" name="password" class="input w-full" placeholder="••••••••" required />
+                </fieldset>
+                
+                <fieldset class="fieldset mb-6">
+                    <legend class="fieldset-legend">Confirmar contraseña</legend>
+                    <input type="password" name="password2" class="input w-full" placeholder="••••••••" required />
+                </fieldset>
+                
+                <div class="card-actions justify-center">
+                    <button type="submit" class="btn btn-primary w-full">Crear Cuenta</button>
+                </div>
+            </form>
+            
+            <div class="divider">O</div>
+            
+            <p class="text-center">
+                ¿Ya tienes cuenta? 
+                <a href="{% url 'login' %}" class="link link-primary">Inicia sesión</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
