@@ -35,7 +35,7 @@
                 <h2 class="card-title text-2xl">¡Empieza a Valorar!</h2>
                 <p class="text-lg">Valora libros para generar recomendaciones personalizadas.</p>
                 <div class="card-actions justify-end">
-                    <button class="btn btn-primary btn-lg">Explorar Categoría Aleatoria</button>
+                    <button class="btn btn-primary btn-lg">EXPLORA UNA CATEGORÍA</button>
                 </div>
             </div>
         </div>
@@ -49,7 +49,6 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-6">
         {% for categoria in categorias %}
         <a href="{% url 'galeria' %}?genero={{ categoria.nombre|urlencode }}" class="flex flex-col items-center group">
-            <!-- Rectángulo grisáceo con portada sobresaliendo -->
             <div class="bg-base-200 rounded-lg w-45 h-25 relative mt-28 group-hover:bg-base-300 transition-colors">
                 {% if categoria.libro.portada %}
                 <img src="{{ categoria.libro.portada }}" alt="{{ categoria.libro.titulo }}"
@@ -60,7 +59,6 @@
                 </div>
                 {% endif %}
             </div>
-            <!-- Título de la categoría -->
             <h3 class="font-bold text-center mt-2 text-sm">{{ categoria.nombre }}</h3>
         </a>
         {% empty %}
