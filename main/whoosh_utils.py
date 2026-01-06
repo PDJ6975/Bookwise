@@ -192,50 +192,6 @@ def buscar_filtrado(query_str="", campos=None, generos=None, valoracion_min=None
     return libros
 
 
-def buscar_populares(votos_min=50, limite=20):
-    """
-    Búsqueda de libros populares (con muchos votos), ordenados por valoración.
-
-    Args:
-        votos_min: Número mínimo de votos
-        limite: Número máximo de resultados
-    """
-    from whoosh.query import NumericRange
-    from whoosh import sorting
-
-    ix = abrir_indice()
-    with ix.searcher() as searcher:
-        query = NumericRange("num_votos", votos_min, None)
-
-        # Ordenar por valoración descendente
-        facet = sorting.FieldFacet("valoracion", reverse=True)
-        results = searcher.search(query, limit=limite, sortedby=facet)
-
-        libros = [dict(hit) for hit in results]
-
-    return libros
-
-def buscar_booleana(query_str, limite=20):
-    """
-    Búsqueda booleana avanzada con operadores AND, OR, NOT.
-
-    Args:
-        query_str: Query con sintaxis booleana.
-                  Ej: "autor:García AND genero:Ficción"
-                  Ej: "titulo:amor OR titulo:guerra"
-                  Ej: "genero:Ficción NOT genero:Infantil"
-        limite: Número máximo de resultados
-    """
-    ix = abrir_indice()
-    with ix.searcher() as searcher:
-        parser = MultifieldParser(['titulo', 'autor', 'genero', 'sinopsis'], ix.schema)
-        query = parser.parse(query_str)
-        results = searcher.search(query, limit=limite)
-
-        libros = [dict(hit) for hit in results]
-
-    return libros
-
 # Para probar directamente
 if __name__ == '__main__':
     

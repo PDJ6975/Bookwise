@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">Consultas Avanzadas</h1>
+    <h1 class="text-3xl font-bold mb-6">Realiza una Consulta</h1>
 
     <!-- Formulario de Búsqueda -->
     <form method="GET" action="{% url 'buscar_avanzado' %}" class="mb-8">
@@ -13,26 +13,8 @@
         <!-- Card Principal -->
         <div class="card bg-base-100 shadow-md mb-6">
             <div class="card-body">
-                <!-- Modo de Búsqueda -->
-                <div class="form-control mb-4">
-                    <label class="label">
-                        <span class="label-text font-semibold">Modo de Búsqueda</span>
-                    </label>
-                    <select name="modo" id="modo-busqueda" class="select select-bordered w-full">
-                        <option value="filtrado" {% if modo == 'filtrado' %}selected{% endif %}>Búsqueda General</option>
-                        <option value="booleana" {% if modo == 'booleana' %}selected{% endif %}>Búsqueda Booleana (AND/OR/NOT)</option>
-                        <option value="populares" {% if modo == 'populares' %}selected{% endif %}>Solo Libros Populares</option>
-                    </select>
-                    <!-- Descripción del modo -->
-                    <div class="mt-2 p-3 bg-base-200 rounded-lg text-sm" id="modo-descripcion">
-                        <p id="desc-filtrado"><strong>General:</strong> Busca en título, autor y sinopsis. Puedes combinar con diferentes filtros opcionales.</p>
-                        <p id="desc-booleana" class="hidden"><strong>Booleana:</strong> Usa operadores: <code>autor:García AND genero:Ficción</code>, <code>titulo:amor OR titulo:guerra</code>, <code>NOT genero:Infantil</code></p>
-                        <p id="desc-populares" class="hidden"><strong>Populares:</strong> Muestra libros con muchos votos ordenados por valoración (útil para descubrir clásicos).</p>
-                    </div>
-                </div>
-
                 <!-- Input de Búsqueda -->
-                <div class="form-control mb-4" id="campo-busqueda">
+                <div class="form-control mb-4">
                     <label class="label">
                         <span class="label-text font-semibold">Buscar</span>
                     </label>
@@ -41,33 +23,33 @@
                             <circle cx="11" cy="11" r="8"></circle>
                             <path d="m21 21-4.3-4.3"></path>
                         </svg>
-                        <input type="search" name="q" value="{{ q }}" placeholder="Título, autor, sinopsis..." class="grow" id="input-busqueda" />
+                        <input type="search" name="q" value="{{ q }}" placeholder="Título, autor, sinopsis..." class="grow" />
                     </label>
                 </div>
 
-                <!-- Campos de Búsqueda (solo para modo filtrado) -->
-                <div class="form-control mb-4 hidden" id="campos-multicampo">
+                <!-- Campos de Búsqueda -->
+                <div class="form-control mb-4">
                     <label class="label">
                         <span class="label-text font-semibold">Buscar en campos</span>
                     </label>
                     <div class="flex gap-4">
                         <label class="cursor-pointer flex items-center gap-2">
-                            <input type="checkbox" name="campo_titulo" class="checkbox checkbox-primary" {% if not tipo_busqueda or campo_titulo %}checked{% endif %} />
+                            <input type="checkbox" name="campo_titulo" class="checkbox checkbox-primary" {% if not busqueda_realizada or campo_titulo %}checked{% endif %} />
                             <span class="label-text">Título</span>
                         </label>
                         <label class="cursor-pointer flex items-center gap-2">
-                            <input type="checkbox" name="campo_autor" class="checkbox checkbox-primary" {% if not tipo_busqueda or campo_autor %}checked{% endif %} />
+                            <input type="checkbox" name="campo_autor" class="checkbox checkbox-primary" {% if not busqueda_realizada or campo_autor %}checked{% endif %} />
                             <span class="label-text">Autor</span>
                         </label>
                         <label class="cursor-pointer flex items-center gap-2">
-                            <input type="checkbox" name="campo_sinopsis" class="checkbox checkbox-primary" {% if not tipo_busqueda or campo_sinopsis %}checked{% endif %} />
+                            <input type="checkbox" name="campo_sinopsis" class="checkbox checkbox-primary" {% if not busqueda_realizada or campo_sinopsis %}checked{% endif %} />
                             <span class="label-text">Sinopsis</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Collapse: Filtros Avanzados (solo para modo filtrado) -->
-                <div class="collapse collapse-arrow bg-base-200 hidden" id="filtros-avanzados">
+                <!-- Collapse: Filtros Avanzados -->
+                <div class="collapse collapse-arrow bg-base-200">
                     <input type="checkbox" checked />
                     <div class="collapse-title font-semibold">
                         Filtros Avanzados
@@ -76,8 +58,8 @@
                         <!-- Géneros -->
                         <div class="form-control mb-4">
                             <label class="label">
-                                <span class="label-text font-semibold">Géneros</span>
-                                <span class="label-text-alt">Selecciona uno o más (OR)</span>
+                                <span class="label-text font-semibold">Géneros:</span>
+                                <span class="label-text-alt">Selecciona uno o más</span>
                             </label>
                             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 bg-base-100 rounded-lg border border-base-300">
                                 {% for genero in generos %}
@@ -92,24 +74,16 @@
                         <!-- Valoración Mínima -->
                         <div class="form-control mb-4">
                             <label class="label">
-                                <span class="label-text font-semibold">Valoración Mínima</span>
+                                <span class="label-text font-semibold">Valoración Mínima:</span>
                                 <span class="label-text-alt" id="val-display">0.0 ★</span>
                             </label>
                             <input type="range" name="valoracion_min" min="0" max="5" value="{{ valoracion_min }}" step="0.5" class="range range-primary" id="val-slider" />
                         </div>
 
-                        <!-- Solo Populares -->
-                        <div class="form-control mb-4" id="toggle-populares">
-                            <label class="cursor-pointer flex items-center gap-3">
-                                <input type="checkbox" name="solo_populares" value="1" class="toggle toggle-primary" {% if solo_populares %}checked{% endif %} />
-                                <span class="label-text font-semibold">Solo libros populares (≥50 votos)</span>
-                            </label>
-                        </div>
-
                         <!-- Fuente -->
                         <div class="form-control mb-4">
                             <label class="label">
-                                <span class="label-text font-semibold">Fuente de Datos</span>
+                                <span class="label-text font-semibold">Fuente de Datos:</span>
                             </label>
                             <select name="fuente" class="select select-bordered select-sm">
                                 <option value="" {% if fuente == '' %}selected{% endif %}>Todas las fuentes</option>
@@ -121,7 +95,7 @@
                         <!-- Ordenar Por -->
                         <div class="form-control">
                             <label class="label">
-                                <span class="label-text font-semibold">Ordenar Resultados</span>
+                                <span class="label-text font-semibold">Ordenar Resultados:</span>
                             </label>
                             <select name="ordenar" class="select select-bordered select-sm">
                                 <option value="relevancia" {% if ordenar == 'relevancia' %}selected{% endif %}>Relevancia</option>
@@ -147,7 +121,7 @@
     </form>
 
     <!-- Resultados -->
-    {% if tipo_busqueda %}
+    {% if busqueda_realizada %}
     <div class="mb-6">
         <!-- Contador de Resultados -->
         <div class="flex items-center justify-between mb-4">
@@ -276,9 +250,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-primary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <h3 class="text-xl font-bold mb-2">Búsqueda Avanzada de Whoosh</h3>
+            <h3 class="text-xl font-bold mb-2">Buscador General con Whoosh</h3>
+            <p class="text-base-content/70">Busca por título, autor o sinopsis con filtros avanzados</p>
             <div class="mt-4 text-sm text-base-content/60">
-                <p>💡 <strong>Tip:</strong> Prueba diferentes modos de búsqueda para explorar todas las capacidades de la aplicación</p>
+                <p>💡 <strong>Tip:</strong> Puedes usar operadores booleanos directamente: <code>AND</code>, <code>OR</code>, <code>NOT</code></p>
             </div>
         </div>
     </div>
@@ -299,63 +274,6 @@
         slider.addEventListener('input', (e) => {
             display.textContent = e.target.value + ' ★';
         });
-    }
-
-    // Script para mostrar/ocultar campos según modo de búsqueda
-    const modoSelect = document.getElementById('modo-busqueda');
-    const campoBusqueda = document.getElementById('campo-busqueda');
-    const camposMulticampo = document.getElementById('campos-multicampo');
-    const filtrosAvanzados = document.getElementById('filtros-avanzados');
-    const inputBusqueda = document.getElementById('input-busqueda');
-
-    // Descripciones
-    const descFiltrado = document.getElementById('desc-filtrado');
-    const descBooleana = document.getElementById('desc-booleana');
-    const descPopulares = document.getElementById('desc-populares');
-
-    function actualizarCampos() {
-        const modo = modoSelect.value;
-
-        // Ocultar todo primero
-        campoBusqueda.classList.add('hidden');
-        camposMulticampo.classList.add('hidden');
-        filtrosAvanzados.classList.add('hidden');
-
-        // Ocultar todas las descripciones
-        descFiltrado.classList.add('hidden');
-        descBooleana.classList.add('hidden');
-        descPopulares.classList.add('hidden');
-
-        // Mostrar campos según modo
-        switch(modo) {
-            case 'filtrado':
-                campoBusqueda.classList.remove('hidden');
-                camposMulticampo.classList.remove('hidden');
-                filtrosAvanzados.classList.remove('hidden');
-                descFiltrado.classList.remove('hidden');
-                inputBusqueda.placeholder = 'Título, autor, sinopsis...';
-                inputBusqueda.required = false;
-                break;
-
-            case 'booleana':
-                campoBusqueda.classList.remove('hidden');
-                descBooleana.classList.remove('hidden');
-                inputBusqueda.placeholder = 'Ej: autor:García AND genero:Ficción';
-                inputBusqueda.required = true;
-                break;
-
-            case 'populares':
-                // No muestra input de búsqueda, usa filtros
-                filtrosAvanzados.classList.remove('hidden');
-                descPopulares.classList.remove('hidden');
-                break;
-        }
-    }
-
-    // Ejecutar al cargar y al cambiar
-    if (modoSelect) {
-        actualizarCampos();
-        modoSelect.addEventListener('change', actualizarCampos);
     }
 </script>
 {% endblock %}

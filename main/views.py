@@ -4,10 +4,7 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.utils import timezone
-from main.whoosh_utils import (
-    obtener_generos, buscar_por_genero, buscar_filtrado,
-    buscar_populares, buscar_booleana
-)
+from main.whoosh_utils import obtener_generos, buscar_por_genero, buscar_filtrado
 from main.models import LibroUsuario
 
 
@@ -182,14 +179,11 @@ def buscar_avanzado(request):
     """Vista de Búsqueda Avanzada con filtros"""
     generos_disponibles = obtener_generos()
     resultados = []
-    query_debug = ""
-    tipo_busqueda = ""
+    busqueda_realizada = False
 
     # Preservar parámetros de búsqueda para mantener estado del formulario
     texto_busqueda = request.GET.get('q', '').strip()
-    modo_busqueda = request.GET.get('modo', 'filtrado')
     valoracion_min = request.GET.get('valoracion_min', '0')
-    solo_populares = request.GET.get('solo_populares', '')
     fuente = request.GET.get('fuente', '')
     ordenar_por = request.GET.get('ordenar', 'relevancia')
     generos_seleccionados = request.GET.getlist('generos')
@@ -197,11 +191,9 @@ def buscar_avanzado(request):
     campo_autor = request.GET.get('campo_autor', '')
     campo_sinopsis = request.GET.get('campo_sinopsis', '')
 
-    if request.method == 'GET' and request.GET.get('buscar'):
-        # Obtener parámetros del formulario
-        texto_busqueda = request.GET.get('q', '').strip()
-        modo_busqueda = request.GET.get('modo', 'filtrado')
-
+    if request.GET.get('buscar'):
+        busqueda_realizada = True
+        
         # Campos de búsqueda
         campos = []
         if request.GET.get('campo_titulo'):
@@ -210,13 +202,10 @@ def buscar_avanzado(request):
             campos.append('autor')
         if request.GET.get('campo_sinopsis'):
             campos.append('sinopsis')
-
-        # Filtros
-        generos_seleccionados = request.GET.getlist('generos')
-        valoracion_min = request.GET.get('valoracion_min')
-        solo_populares = request.GET.get('solo_populares')
-        fuente = request.GET.get('fuente', '')
-        ordenar_por = request.GET.get('ordenar', 'relevancia')
+        
+        # Si no hay campos seleccionados, usar todos por defecto
+        if not campos:
+            campos = ['titulo', 'autor', 'sinopsis']
 
         # Convertir valoración a float
         try:
@@ -224,40 +213,18 @@ def buscar_avanzado(request):
         except ValueError:
             val_min = None
 
-        # Votos mínimos si solo_populares está activado
-        votos_min = 50 if solo_populares else None
-
-        # Ejecutar búsqueda según el modo
-        if modo_busqueda == 'filtrado':
-            # BÚSQUEDA FILTRADA
-            tipo_busqueda = "Búsqueda General"
-
-            # Si no hay campos seleccionados, usar todos por defecto
-            if not campos:
-                campos = ['titulo', 'autor', 'sinopsis']
-
-            resultados = buscar_filtrado(
-                query_str=texto_busqueda,
-                campos=campos,
-                generos=generos_seleccionados if generos_seleccionados else None,
-                valoracion_min=val_min,
-                votos_min=votos_min,
-                fuente=fuente if fuente else None,
-                limite=50
-            )
-
-        elif modo_busqueda == 'booleana':
-            # BÚSQUEDA BOOLEANA
-            tipo_busqueda = "Búsqueda Booleana (AND/OR/NOT)"
-            resultados = buscar_booleana(texto_busqueda, limite=50)
-
-        elif modo_busqueda == 'populares':
-            # BÚSQUEDA DE POPULARES
-            tipo_busqueda = "Libros Populares (ordenados por valoración)"
-            resultados = buscar_populares(votos_min=votos_min or 50, limite=50)
+        # Ejecutar búsqueda
+        resultados = buscar_filtrado(
+            query_str=texto_busqueda,
+            campos=campos,
+            generos=generos_seleccionados if generos_seleccionados else None,
+            valoracion_min=val_min,
+            fuente=fuente if fuente else None,
+            limite=50
+        )
 
         # Ordenar resultados si se especifica
-        if ordenar_por != 'relevancia' and resultados and modo_busqueda == 'filtrado':
+        if ordenar_por != 'relevancia' and resultados:
             if ordenar_por == 'valoracion':
                 resultados = sorted(resultados, key=lambda x: x.get('valoracion', 0), reverse=True)
             elif ordenar_por == 'popularidad':
@@ -268,14 +235,11 @@ def buscar_avanzado(request):
     return render(request, 'main/buscar_avanzado.html', {
         'generos': generos_disponibles,
         'resultados': resultados,
-        'query_debug': query_debug,
-        'tipo_busqueda': tipo_busqueda,
+        'busqueda_realizada': busqueda_realizada,
         'num_resultados': len(resultados),
         # Preservar estado del formulario
         'q': texto_busqueda,
-        'modo': modo_busqueda,
         'valoracion_min': valoracion_min,
-        'solo_populares': solo_populares,
         'fuente': fuente,
         'ordenar': ordenar_por,
         'generos_seleccionados': generos_seleccionados,
