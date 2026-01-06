@@ -14,6 +14,13 @@ Algoritmo:
 4. Si no hay perfil -> mostrar los más populares
 """
 
+# Configurar Django si se ejecuta directamente
+if __name__ == '__main__':
+    import os
+    import django
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bookwise.settings')
+    django.setup()
+
 from collections import Counter
 from main.models import LibroUsuario
 from main.whoosh_utils import obtener_todos_libros
@@ -65,7 +72,7 @@ def construir_perfil_usuario(usuario_id):
     libros_leidos = LibroUsuario.objects.filter(
         usuario_id=usuario_id,
         estado='leido',
-        valoracion__gte=4  # Solo los que le gustaron
+        valoracion__gte=4
     )
     
     generos_ponderados = Counter()
@@ -75,17 +82,13 @@ def construir_perfil_usuario(usuario_id):
     for libro in libros_leidos:
         # Calcular peso según valoración
         if libro.valoracion >= 5:
-            peso = 2  # Le encantó
+            peso = 2  
         else:
-            peso = 1  # Le gustó (4 estrellas)
+            peso = 1  
         
         # Agregar género al perfil
         if libro.genero:
-            # Por si el género tiene comas (múltiples géneros)
-            for g in libro.genero.split(','):
-                g_limpio = g.strip()
-                if g_limpio:
-                    generos_ponderados[g_limpio] += peso
+            generos_ponderados[libro.genero.strip()] += peso
         
         # Agregar autor al perfil
         if libro.autor:
@@ -130,7 +133,7 @@ def calcular_score(libro, perfil):
         - 20% Popularidad del libro (valoración + votos)
     
     Args:
-        libro: dict con datos del libro (de Whoosh)
+        libro: dict con datos del libro 
         perfil: dict con perfil del usuario
     
     Returns:
@@ -139,7 +142,7 @@ def calcular_score(libro, perfil):
     # 1. SIMILITUD DE GÉNEROS (60%)
     generos_libro = set()
     if libro.get('genero'):
-        generos_libro = set(g.strip() for g in libro['genero'].split(','))
+        generos_libro = {libro['genero'].strip()}
     
     similitud = coeficiente_dice(perfil['generos'], generos_libro)
     score_genero = similitud * 0.60
@@ -158,7 +161,7 @@ def calcular_score(libro, perfil):
     # Normalizar valoración a 0-1
     valoracion_norm = min(valoracion / 5.0, 1.0)
     
-    # Normalizar votos (máximo ~1000 votos como referencia)
+    # Normalizar votos
     votos_norm = min(math.log10(num_votos + 1) / 3.0, 1.0) if num_votos > 0 else 0
     
     # Combinar valoración (70%) y votos (30%) para la popularidad
@@ -177,7 +180,7 @@ def obtener_motivo(libro, perfil):
     """
     generos_libro = set()
     if libro.get('genero'):
-        generos_libro = set(g.strip() for g in libro['genero'].split(','))
+        generos_libro = {libro['genero'].strip()}
     
     # ¿Es autor favorito?
     autor_libro = libro.get('autor', '').strip()
@@ -223,8 +226,7 @@ def recomendar_libros(usuario_id, n=4):
     # CASO: Usuario sin perfil -> devolver los más populares
     if not perfil['generos']:
         # Calcular score de popularidad combinando valoración + votos
-        # Fórmula: score = valoración * log10(votos + 1)
-        # Esto prioriza libros bien valorados CON muchos votos
+        # Prioriza libros bien valorados con muchos votos
         import math
         
         def score_popularidad(libro):
@@ -319,7 +321,6 @@ def diagnosticar_perfil(usuario_id):
 # ============================================================================
 
 if __name__ == '__main__':
-    # Test del Coeficiente de Dice
     print("=== Test Coeficiente de Dice ===\n")
     
     # Caso 1: Idénticos
@@ -341,3 +342,9 @@ if __name__ == '__main__':
     a = set()
     b = {'Terror'}
     print(f"Dice({a}, {b}) = {coeficiente_dice(a, b):.2f}  # Esperado: 0.0")
+    
+    # Test con usuario real
+    print("\n=== Test Recomendaciones ===\n")
+    recs = recomendar_libros(usuario_id=9999, n=3)
+    for i, rec in enumerate(recs):
+        print(f"{i+1}. {rec['titulo'][:40]} | Score: {rec['score']} | {rec['motivo']}")
