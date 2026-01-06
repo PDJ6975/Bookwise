@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.utils import timezone
 from main.whoosh_utils import obtener_generos, buscar_por_genero, buscar_filtrado
 from main.models import LibroUsuario
+from main.recommender import obtener_recomendaciones_para_vista, diagnosticar_perfil
 
 
 def index(request):
@@ -22,7 +23,19 @@ def index(request):
                 'libro': libros[0]
             })
 
-    return render(request, 'main/index.html', {'categorias': categorias})
+    # Obtener recomendaciones personalizadas si el usuario está autenticado
+    recomendaciones = []
+    perfil_info = None
+    
+    if request.user.is_authenticated:
+        recomendaciones = obtener_recomendaciones_para_vista(request.user.id, n=4)
+        perfil_info = diagnosticar_perfil(request.user.id)
+
+    return render(request, 'main/index.html', {
+        'categorias': categorias,
+        'recomendaciones': recomendaciones,
+        'perfil_info': perfil_info
+    })
 
 
 def galeria(request):

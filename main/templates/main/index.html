@@ -6,14 +6,17 @@
 {% block content %}
 <h1 class="text-3xl font-bold mb-6">Descubrir</h1>
 
+<!-- Sección de Recomendaciones -->
 <section class="mb-12">
-    <h2 class="text-2xl font-bold mb-4">Recomendaciones</h2>
+    <h2 class="text-2xl font-bold mb-4">Recomendaciones para ti</h2>
     
     {% if recomendaciones %}
+    <!-- Grid de recomendaciones -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {% for libro in recomendaciones|slice:":4" %}
-        <div class="card bg-base-100 shadow-sm">
-            <figure>
+        {% for libro in recomendaciones %}
+        <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow"
+             onclick="document.getElementById('modal_rec_{{ forloop.counter }}').showModal()">
+            <figure class="relative">
                 {% if libro.portada %}
                 <img src="{{ libro.portada }}" alt="{{ libro.titulo }}" class="w-full h-64 object-cover">
                 {% else %}
@@ -21,21 +24,137 @@
                     <span class="text-4xl">📖</span>
                 </div>
                 {% endif %}
+                <!-- Badge de score -->
+                <div class="absolute top-2 right-2 badge badge-primary font-bold">
+                    {{ libro.score|floatformat:0 }}%
+                </div>
             </figure>
+            <div class="card-body p-3">
+                <h3 class="card-title text-sm line-clamp-2">{{ libro.titulo }}</h3>
+                <p class="text-xs text-base-content/70 line-clamp-1">{{ libro.autor }}</p>
+                <p class="text-xs text-primary mt-1">{{ libro.motivo }}</p>
+            </div>
         </div>
+
+        <!-- Modal del libro -->
+        <dialog id="modal_rec_{{ forloop.counter }}" class="modal">
+            <div class="modal-box max-w-2xl">
+                <form method="dialog">
+                    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                </form>
+
+                <div class="flex gap-6">
+                    <div class="flex-shrink-0">
+                        {% if libro.portada %}
+                        <img src="{{ libro.portada }}" alt="{{ libro.titulo }}" class="rounded-lg w-40 h-60 object-cover">
+                        {% else %}
+                        <div class="rounded-lg w-40 h-60 bg-base-300 flex items-center justify-center">
+                            <span class="text-6xl">📖</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="text-xl font-bold">{{ libro.titulo }}</h3>
+                            <span class="badge badge-primary">{{ libro.score|floatformat:0 }}% match</span>
+                        </div>
+                        <p class="text-base-content/70 mb-2">{{ libro.autor }}</p>
+
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="badge badge-outline">{{ libro.genero }}</span>
+                            <div class="flex items-center gap-1">
+                                <span class="text-warning">★</span>
+                                <span class="font-semibold">{{ libro.valoracion }}/5</span>
+                                <span class="text-xs text-base-content/50">({{ libro.num_votos }} votos)</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-primary/10 rounded-lg p-2 mb-4">
+                            <p class="text-sm text-primary font-medium">💡 {{ libro.motivo }}</p>
+                        </div>
+
+                        <p class="text-sm mb-4">
+                            {% if libro.sinopsis %}
+                                {{ libro.sinopsis|truncatewords:60 }}
+                            {% else %}
+                                <em>Sin sinopsis disponible</em>
+                            {% endif %}
+                        </p>
+
+                        <div class="card-actions">
+                            {% if user.is_authenticated %}
+                            <form action="{% url 'agregar_libro' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="titulo" value="{{ libro.titulo }}">
+                                <input type="hidden" name="autor" value="{{ libro.autor }}">
+                                <input type="hidden" name="portada" value="{{ libro.portada }}">
+                                <input type="hidden" name="genero" value="{{ libro.genero }}">
+                                <input type="hidden" name="sinopsis" value="{{ libro.sinopsis }}">
+                                <input type="hidden" name="next" value="{% url 'index' %}">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Añadir a Mi Librería
+                                </button>
+                            </form>
+                            {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-primary btn-sm">Iniciar sesión para guardar</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
         {% endfor %}
     </div>
-    {% else %}
+
+    <!-- Info del perfil -->
+    {% if perfil_info and perfil_info.tiene_perfil %}
+    <div class="mt-4 text-sm text-base-content/60">
+        <p>📊 {{ perfil_info.mensaje }}</p>
+    </div>
+    {% endif %}
+
+    {% elif user.is_authenticated %}
+    <!-- Usuario autenticado pero sin recomendaciones -->
     <div class="flex justify-center">
         <div class="card card-side bg-neutral text-neutral-content shadow-sm max-w-4xl w-full">
-            <figure>
-                <img src="{% static 'main/img/recomendaciones-vacias.jpg' %}" alt="Recomendaciones" class="w-65 h-80 object-cover">
+            <figure class="hidden sm:block">
+                <img src="{% static 'main/img/recomendaciones-vacias.jpg' %}" alt="Recomendaciones" class="w-65 h-80 object-cover" onerror="this.style.display='none'">
             </figure>
             <div class="card-body">
-                <h2 class="card-title text-2xl">¡Empieza a Valorar!</h2>
-                <p class="text-lg">Valora libros para generar recomendaciones personalizadas.</p>
-                <div class="card-actions justify-end">
-                    <button class="btn btn-primary btn-lg">EXPLORA UNA CATEGORÍA</button>
+                <h2 class="card-title text-2xl">¡Personaliza tus recomendaciones!</h2>
+                <p class="text-lg">Lee y valora algunos libros para que podamos recomendarte títulos que te encantarán.</p>
+                <ul class="list-disc list-inside text-sm opacity-80 mt-2">
+                    <li>Marca libros como "Leídos" en tu librería</li>
+                    <li>Dales una valoración de 1 a 5 estrellas</li>
+                    <li>Cuantos más valores, mejores recomendaciones</li>
+                </ul>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'galeria' %}" class="btn btn-primary">Explorar Catálogo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Usuario no autenticado -->
+    <div class="flex justify-center">
+        <div class="card card-side bg-neutral text-neutral-content shadow-sm max-w-4xl w-full">
+            <figure class="hidden sm:block">
+                <img src="{% static 'main/img/recomendaciones-vacias.jpg' %}" alt="Recomendaciones" class="w-65 h-80 object-cover" onerror="this.style.display='none'">
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title text-2xl">¡Descubre tu próxima lectura!</h2>
+                <p class="text-lg">Inicia sesión para obtener recomendaciones personalizadas basadas en tus gustos.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'login' %}" class="btn btn-primary">Iniciar Sesión</a>
+                    <a href="{% url 'registro' %}" class="btn btn-ghost">Registrarse</a>
                 </div>
             </div>
         </div>
@@ -43,6 +162,7 @@
     {% endif %}
 </section>
 
+<!-- Sección de Categorías -->
 <section>
     <h2 class="text-2xl font-bold mb-4">Categorías</h2>
 
@@ -62,7 +182,7 @@
             <h3 class="font-bold text-center mt-2 text-sm">{{ categoria.nombre }}</h3>
         </a>
         {% empty %}
-        <p>No hay categorías disponibles</p>
+        <p class="col-span-full text-center text-base-content/60">No hay categorías disponibles. Ejecuta el scraping primero.</p>
         {% endfor %}
     </div>
 </section>
