@@ -11,13 +11,16 @@
 </div>
 <h1 class="text-2xl font-bold mb-6">{{ genero_filtrado.upper }}</h1>
 {% else %}
-<h1 class="text-4xl font-extrabold mb-6">CATÁLOGO DE LIBROS</h1>
+<div class="flex items-center gap-3 mb-8">
+    <div class="w-1 h-6 bg-primary rounded-full"></div>
+    <h2 class="text-lg font-medium uppercase tracking-widest text-base-content/70">CATÁLOGO DE LIBROS</h2>
+</div>
 {% endif %}
 
 {% for genero, libros in libros_por_genero.items %}
 <section class="mb-10">
     {% if not genero_filtrado %}
-    <h2 class="text-2xl font-semibold mb-4">{{ genero.upper }}</h2>
+    <h2 class="text-xl font-semibold mb-4">{{ genero.upper }}</h2>
     {% endif %}
 
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
