@@ -79,24 +79,6 @@ def indexar_libros(libros):
     return ix
 
 
-def buscar(query_str, campo='titulo', limite=10):
-    """Búsqueda simple en un campo"""
-    ix = abrir_indice()
-    with ix.searcher() as searcher:
-        parser = QueryParser(campo, ix.schema)
-        query = parser.parse(query_str)
-        results = searcher.search(query, limit=limite)
-        
-        libros = [dict(hit) for hit in results]
-    
-    return libros
-
-
-def buscar_por_genero(genero, limite=50):
-    """Busca libros de un género específico"""
-    return buscar(genero, campo='genero', limite=limite)
-
-
 def obtener_todos_libros():
     """Retorna todos los libros del índice"""
     ix = abrir_indice()
@@ -193,6 +175,11 @@ def buscar_filtrado(query_str="", campos=None, generos=None, valoracion_min=None
     return libros
 
 
+def buscar_por_genero(genero, limite=50):
+    """Busca libros de un género específico usando búsqueda filtrada"""
+    return buscar_filtrado(generos=[genero], limite=limite)
+
+
 # Para probar directamente
 if __name__ == '__main__':
     
@@ -209,7 +196,7 @@ if __name__ == '__main__':
     
     # Pruebas de búsqueda
     print("\n--- Prueba: buscar 'amor' en título ---")
-    resultados = buscar("amor", campo='titulo', limite=5)
+    resultados = buscar_filtrado(query_str="amor", campos=['titulo'], limite=5)
     for r in resultados:
         print(f"  {r['titulo']} - {r['autor']}")
     
@@ -217,6 +204,11 @@ if __name__ == '__main__':
     resultados = buscar_por_genero("Ensayo", limite=5)
     for r in resultados:
         print(f"  {r['titulo']} - {r['genero']}")
+    
+    print("\n--- Prueba: búsqueda avanzada (valoración > 4, género Narrativa) ---")
+    resultados = buscar_filtrado(generos=["Narrativa"], valoracion_min=4.0, limite=5)
+    for r in resultados:
+        print(f"  {r['titulo']} - ★{r['valoracion']}")
     
     print(f"\n--- Géneros disponibles ({len(obtener_generos())}) ---")
     for g in obtener_generos():
