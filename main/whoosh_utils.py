@@ -179,8 +179,6 @@ def buscar_por_genero(genero, limite=50):
     """Busca libros de un género específico usando búsqueda filtrada"""
     return buscar_filtrado(generos=[genero], limite=limite)
 
-
-# Para probar directamente
 if __name__ == '__main__':
     
     print("=== Creando índice con datos de scraping ===\n")

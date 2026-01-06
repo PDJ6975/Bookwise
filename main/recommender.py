@@ -1,6 +1,6 @@
 # recommender.py
 """
-Sistema de Recomendación Basado en Contenido para BookWise.
+Sistema de Recomendación Basado en Contenido.
 
 Flujo del usuario:
 1. Añade libro a "Por Leer" (Mi Librería)
@@ -14,7 +14,6 @@ Algoritmo:
 4. Si no hay perfil -> mostrar los más populares
 """
 
-# Configurar Django si se ejecuta directamente
 if __name__ == '__main__':
     import os
     import django
