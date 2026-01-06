@@ -380,6 +380,31 @@ def mostrar_libros(libros):
         print(f"  Sinopsis: {sinopsis}...")
 
 
+def ejecutar_scraping():
+    """
+    Ejecuta el scraping completo y actualiza el índice.
+    """
+    from main.whoosh_utils import indexar_libros
+    
+    print("Iniciando scraping...")
+    
+    # Extraer libros de todas las fuentes
+    libros = extraer_todos_libros('todo')
+    libros = filtrar_duplicados(libros)
+    
+    print(f"{len(libros)} libros extraídos")
+    
+    # Indexar libros (crea índice nuevo)
+    indexar_libros(libros)
+    
+    print(f"Índice actualizado con {len(libros)} libros")
+    
+    return {
+        'total': len(libros),
+        'mensaje': f'{len(libros)} libros indexados correctamente'
+    }
+
+
 # Para probar el scraping directamente
 if __name__ == '__main__':
     import sys

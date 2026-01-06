@@ -89,7 +89,7 @@
                 
                 <!-- Menú principal -->
                 <p class="text-xs text-base-content/50 uppercase tracking-wider mb-2 px-4">Menú</p>
-                <ul class="flex-1">
+                <ul>
                     <li>
                         <a href="{% url 'index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -114,11 +114,6 @@
                             Mi Librería
                         </a>
                     </li>
-                </ul>
-
-                <!-- Búsqueda -->
-                <p class="text-xs text-base-content/50 uppercase tracking-wider mb-2 px-4 mt-4">Búsqueda</p>
-                <ul>
                     <li>
                         <a href="{% url 'buscar_avanzado' %}" class="{% if request.resolver_match.url_name == 'buscar_avanzado' %}active{% endif %}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -127,7 +122,22 @@
                             Consultas Avanzadas
                         </a>
                     </li>
+                    {% if user.is_staff or user.is_superuser %}
+                    <li>
+                        <a href="#" onclick="event.preventDefault(); if(confirm('¿Ejecutar scraping? Esto puede tardar unos minutos.')) document.getElementById('scraping-form').submit();">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Realizar Scraping
+                        </a>
+                        <form id="scraping-form" action="{% url 'realizar_scraping' %}" method="post" class="hidden">
+                            {% csrf_token %}
+                        </form>
+                    </li>
+                    {% endif %}
                 </ul>
+                
+                <div class="flex-1"></div>
                 
                 <div class="divider"></div>
                 

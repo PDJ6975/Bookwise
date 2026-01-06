@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -7,6 +7,12 @@ from django.utils import timezone
 from main.whoosh_utils import obtener_generos, buscar_por_genero, buscar_filtrado
 from main.models import LibroUsuario
 from main.recommender import obtener_recomendaciones_para_vista, diagnosticar_perfil
+from main.scraping import ejecutar_scraping
+
+
+def is_admin(user):
+    """Verifica si el usuario es administrador"""
+    return user.is_staff or user.is_superuser
 
 
 def index(request):
@@ -260,3 +266,27 @@ def buscar_avanzado(request):
         'campo_autor': campo_autor,
         'campo_sinopsis': campo_sinopsis,
     })
+
+
+# ============================================================================
+# ADMINISTRACIÓN
+# ============================================================================
+
+@login_required
+@user_passes_test(is_admin)
+def realizar_scraping(request):
+    """Ejecuta el scraping y actualiza el índice Whoosh"""
+    if request.method == 'POST':
+        try:
+            
+            # Ejecutar scraping
+            resultado = ejecutar_scraping()
+            
+            messages.success(
+                request, 
+                f"Scraping completado: {resultado.get('total', 0)} libros indexados"
+            )
+        except Exception as e:
+            messages.error(request, f"Error durante el scraping: {str(e)}")
+    
+    return redirect('index')
