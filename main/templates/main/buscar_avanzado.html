@@ -173,19 +173,6 @@
     <!-- Resultados -->
     {% if tipo_busqueda %}
     <div class="mb-6">
-        <!-- Info de Búsqueda -->
-        <div class="alert alert-info mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <div class="flex-1">
-                <h3 class="font-bold">{{ tipo_busqueda }}</h3>
-                <div class="text-xs">
-                    <code class="bg-base-200 px-2 py-1 rounded">{{ query_debug }}</code>
-                </div>
-            </div>
-        </div>
-
         <!-- Contador de Resultados -->
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl font-bold">Resultados</h2>
@@ -198,12 +185,17 @@
             {% for libro in resultados %}
             <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow"
                  onclick="document.getElementById('modal_resultado_{{ forloop.counter }}').showModal()">
-                <figure class="px-2 pt-2">
+                <figure class="px-2 pt-2 relative">
                     {% if libro.portada %}
                     <img src="{{ libro.portada }}" alt="{{ libro.titulo }}" class="rounded-lg h-48 w-full object-cover">
                     {% else %}
                     <div class="rounded-lg h-48 w-full bg-base-300 flex items-center justify-center">
                         <span class="text-4xl">📖</span>
+                    </div>
+                    {% endif %}
+                    {% if libro.score %}
+                    <div class="absolute top-3 left-3 badge badge-info badge-sm font-mono">
+                        {{ libro.score|floatformat:2 }}
                     </div>
                     {% endif %}
                 </figure>

@@ -146,7 +146,7 @@ def buscar_con_boost(query_str, campos_boost=None, limite=20):
         limite: Número máximo de resultados
 
     Returns:
-        Lista de diccionarios con libros encontrados
+        Lista de diccionarios con libros encontrados (incluye 'score')
     """
     if campos_boost is None:
         campos_boost = {"titulo": 2.0, "autor": 1.5, "sinopsis": 1.0}
@@ -162,7 +162,12 @@ def buscar_con_boost(query_str, campos_boost=None, limite=20):
         query = parser.parse(query_str)
         results = searcher.search(query, limit=limite)
 
-        libros = [dict(hit) for hit in results]
+        # Incluir score en los resultados
+        libros = []
+        for hit in results:
+            libro = dict(hit)
+            libro['score'] = hit.score
+            libros.append(libro)
 
     return libros
 
