@@ -161,9 +161,10 @@ def buscar_filtrado(query_str="", campos=None, generos=None, valoracion_min=None
             text_query = parser.parse(query_str)
             filtros.append(text_query)
 
-        # Filtro por géneros (OR entre ellos)
+        # Filtro por géneros
         if generos and len(generos) > 0:
-            genero_queries = [Term("genero", g) for g in generos]
+            genero_parser = QueryParser("genero", ix.schema)
+            genero_queries = [genero_parser.parse(f'"{g}"') for g in generos]
             filtros.append(Or(genero_queries))
 
         # Filtro por valoración
