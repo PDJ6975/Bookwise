@@ -135,13 +135,14 @@ def limpiar_indice():
 
 # BÚSQUEDAS AVANZADAS
 
-def buscar_filtrado(query_str="", generos=None, valoracion_min=None,
+def buscar_filtrado(query_str="", campos=None, generos=None, valoracion_min=None,
                     valoracion_max=None, votos_min=None, fuente=None, limite=20):
     """
     Búsqueda con múltiples filtros combinados (AND).
 
     Args:
         query_str: Texto a buscar (opcional)
+        campos: Lista de campos donde buscar (por defecto: ['titulo', 'autor', 'sinopsis'])
         generos: Lista de géneros (búsqueda OR entre ellos)
         valoracion_min: Valoración mínima
         valoracion_max: Valoración máxima
@@ -151,13 +152,17 @@ def buscar_filtrado(query_str="", generos=None, valoracion_min=None,
     """
     from whoosh.query import And, Or, Term, NumericRange
 
+    # Campos por defecto si no se especifican
+    if campos is None:
+        campos = ['titulo', 'autor', 'sinopsis']
+
     ix = abrir_indice()
     with ix.searcher() as searcher:
         filtros = []
 
-        # Búsqueda de texto general
+        # Búsqueda de texto general en los campos especificados
         if query_str:
-            parser = MultifieldParser(['titulo', 'autor', 'sinopsis'], ix.schema)
+            parser = MultifieldParser(campos, ix.schema)
             text_query = parser.parse(query_str)
             filtros.append(text_query)
 

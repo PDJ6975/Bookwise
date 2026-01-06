@@ -52,15 +52,15 @@
                     </label>
                     <div class="flex gap-4">
                         <label class="cursor-pointer flex items-center gap-2">
-                            <input type="checkbox" name="campo_titulo" class="checkbox checkbox-primary" checked />
+                            <input type="checkbox" name="campo_titulo" class="checkbox checkbox-primary" {% if not tipo_busqueda or campo_titulo %}checked{% endif %} />
                             <span class="label-text">Título</span>
                         </label>
                         <label class="cursor-pointer flex items-center gap-2">
-                            <input type="checkbox" name="campo_autor" class="checkbox checkbox-primary" checked />
+                            <input type="checkbox" name="campo_autor" class="checkbox checkbox-primary" {% if not tipo_busqueda or campo_autor %}checked{% endif %} />
                             <span class="label-text">Autor</span>
                         </label>
                         <label class="cursor-pointer flex items-center gap-2">
-                            <input type="checkbox" name="campo_sinopsis" class="checkbox checkbox-primary" checked />
+                            <input type="checkbox" name="campo_sinopsis" class="checkbox checkbox-primary" {% if not tipo_busqueda or campo_sinopsis %}checked{% endif %} />
                             <span class="label-text">Sinopsis</span>
                         </label>
                     </div>

@@ -194,6 +194,9 @@ def buscar_avanzado(request):
     fuente = request.GET.get('fuente', '')
     ordenar_por = request.GET.get('ordenar', 'relevancia')
     generos_seleccionados = request.GET.getlist('generos')
+    campo_titulo = request.GET.get('campo_titulo', '')
+    campo_autor = request.GET.get('campo_autor', '')
+    campo_sinopsis = request.GET.get('campo_sinopsis', '')
 
     if request.method == 'GET' and request.GET.get('buscar'):
         # Obtener parámetros del formulario
@@ -228,9 +231,15 @@ def buscar_avanzado(request):
         # Ejecutar búsqueda según el modo
         if modo_busqueda == 'filtrado':
             # BÚSQUEDA FILTRADA
-            tipo_busqueda = "Búsqueda Filtrada Multicampo"
+            tipo_busqueda = "Búsqueda General"
+
+            # Si no hay campos seleccionados, usar todos por defecto
+            if not campos:
+                campos = ['titulo', 'autor', 'sinopsis']
+
             resultados = buscar_filtrado(
                 query_str=texto_busqueda,
+                campos=campos,
                 generos=generos_seleccionados if generos_seleccionados else None,
                 valoracion_min=val_min,
                 votos_min=votos_min,
@@ -287,4 +296,7 @@ def buscar_avanzado(request):
         'fuente': fuente,
         'ordenar': ordenar_por,
         'generos_seleccionados': generos_seleccionados,
+        'campo_titulo': campo_titulo,
+        'campo_autor': campo_autor,
+        'campo_sinopsis': campo_sinopsis,
     })
