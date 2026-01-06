@@ -3,7 +3,7 @@ import os
 from whoosh.index import create_in, open_dir, exists_in
 from whoosh.fields import Schema, TEXT, ID, NUMERIC, KEYWORD
 from whoosh.qparser import QueryParser, MultifieldParser
-from whoosh.query import Every
+from whoosh.query import Every, And, Or, Term, NumericRange
 from .scraping import extraer_todos_libros, filtrar_duplicados
 
 # Directorio del índice
@@ -138,7 +138,7 @@ def limpiar_indice():
 def buscar_filtrado(query_str="", campos=None, generos=None, valoracion_min=None,
                     valoracion_max=None, votos_min=None, fuente=None, limite=20):
     """
-    Búsqueda con múltiples filtros combinados (AND).
+    Búsqueda con múltiples filtros combinados.
 
     Args:
         query_str: Texto a buscar (opcional)
@@ -150,11 +150,6 @@ def buscar_filtrado(query_str="", campos=None, generos=None, valoracion_min=None
         fuente: Fuente específica ('quelibroleo' o 'lecturalia')
         limite: Número máximo de resultados
     """
-    from whoosh.query import And, Or, Term, NumericRange
-
-    # Campos por defecto si no se especifican
-    if campos is None:
-        campos = ['titulo', 'autor', 'sinopsis']
 
     ix = abrir_indice()
     with ix.searcher() as searcher:
@@ -197,26 +192,6 @@ def buscar_filtrado(query_str="", campos=None, generos=None, valoracion_min=None
     return libros
 
 
-def buscar_por_rango_valoracion(min_val, max_val, limite=20):
-    """
-    Búsqueda por rango de valoración.
-
-    Args:
-        min_val: Valoración mínima (1.0-5.0)
-        max_val: Valoración máxima (1.0-5.0)
-        limite: Número máximo de resultados
-    """
-    from whoosh.query import NumericRange
-
-    ix = abrir_indice()
-    with ix.searcher() as searcher:
-        query = NumericRange("valoracion", min_val, max_val)
-        results = searcher.search(query, limit=limite)
-        libros = [dict(hit) for hit in results]
-
-    return libros
-
-
 def buscar_populares(votos_min=50, limite=20):
     """
     Búsqueda de libros populares (con muchos votos), ordenados por valoración.
@@ -240,33 +215,6 @@ def buscar_populares(votos_min=50, limite=20):
 
     return libros
 
-
-def buscar_ordenado(query_str, campo_orden="valoracion", descendente=True, limite=20):
-    """
-    Búsqueda con ordenación personalizada.
-
-    Args:
-        query_str: Texto a buscar
-        campo_orden: Campo por el que ordenar (valoracion, num_votos, titulo, autor)
-        descendente: True para orden descendente, False para ascendente
-        limite: Número máximo de resultados
-    """
-    from whoosh import sorting
-
-    ix = abrir_indice()
-    with ix.searcher() as searcher:
-        parser = MultifieldParser(['titulo', 'autor', 'sinopsis'], ix.schema)
-        query = parser.parse(query_str)
-
-        # Configurar ordenación
-        facet = sorting.FieldFacet(campo_orden, reverse=descendente)
-        results = searcher.search(query, limit=limite, sortedby=facet)
-
-        libros = [dict(hit) for hit in results]
-
-    return libros
-
-
 def buscar_booleana(query_str, limite=20):
     """
     Búsqueda booleana avanzada con operadores AND, OR, NOT.
@@ -287,29 +235,6 @@ def buscar_booleana(query_str, limite=20):
         libros = [dict(hit) for hit in results]
 
     return libros
-
-
-def buscar_por_multiples_generos(generos_list, limite=20):
-    """
-    Búsqueda por múltiples géneros (OR).
-
-    Args:
-        generos_list: Lista de géneros
-        limite: Número máximo de resultados
-    """
-    from whoosh.query import Or, Term
-
-    ix = abrir_indice()
-    with ix.searcher() as searcher:
-        # Crear query OR con todos los géneros
-        genero_queries = [Term("genero", g) for g in generos_list]
-        query = Or(genero_queries)
-
-        results = searcher.search(query, limit=limite)
-        libros = [dict(hit) for hit in results]
-
-    return libros
-
 
 # Para probar directamente
 if __name__ == '__main__':

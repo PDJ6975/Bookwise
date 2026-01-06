@@ -3,11 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import JsonResponse
 from django.utils import timezone
 from main.whoosh_utils import (
     obtener_generos, buscar_por_genero, buscar_filtrado,
-    buscar_populares, buscar_ordenado, buscar_booleana
+    buscar_populares, buscar_booleana
 )
 from main.models import LibroUsuario
 
@@ -180,7 +179,7 @@ def logout_view(request):
 
 
 def buscar_avanzado(request):
-    """Vista de Búsqueda Avanzada con filtros complejos"""
+    """Vista de Búsqueda Avanzada con filtros"""
     generos_disponibles = obtener_generos()
     resultados = []
     query_debug = ""
@@ -247,31 +246,15 @@ def buscar_avanzado(request):
                 limite=50
             )
 
-            # Construir query debug
-            parts = []
-            if texto_busqueda:
-                parts.append(f"texto:'{texto_busqueda}'")
-            if generos_seleccionados:
-                parts.append(f"géneros:{generos_seleccionados}")
-            if val_min:
-                parts.append(f"valoración≥{val_min}")
-            if votos_min:
-                parts.append(f"votos≥{votos_min}")
-            if fuente:
-                parts.append(f"fuente:{fuente}")
-            query_debug = " AND ".join(parts) if parts else "todos los libros"
-
         elif modo_busqueda == 'booleana':
             # BÚSQUEDA BOOLEANA
             tipo_busqueda = "Búsqueda Booleana (AND/OR/NOT)"
             resultados = buscar_booleana(texto_busqueda, limite=50)
-            query_debug = texto_busqueda
 
         elif modo_busqueda == 'populares':
             # BÚSQUEDA DE POPULARES
             tipo_busqueda = "Libros Populares (ordenados por valoración)"
             resultados = buscar_populares(votos_min=votos_min or 50, limite=50)
-            query_debug = f"libros con ≥{votos_min or 50} votos, ordenados por valoración"
 
         # Ordenar resultados si se especifica
         if ordenar_por != 'relevancia' and resultados and modo_busqueda == 'filtrado':

@@ -19,13 +19,13 @@
                         <span class="label-text font-semibold">Modo de Búsqueda</span>
                     </label>
                     <select name="modo" id="modo-busqueda" class="select select-bordered w-full">
-                        <option value="filtrado" {% if modo == 'filtrado' %}selected{% endif %}>Búsqueda General (Multicampo + Filtros)</option>
+                        <option value="filtrado" {% if modo == 'filtrado' %}selected{% endif %}>Búsqueda General</option>
                         <option value="booleana" {% if modo == 'booleana' %}selected{% endif %}>Búsqueda Booleana (AND/OR/NOT)</option>
                         <option value="populares" {% if modo == 'populares' %}selected{% endif %}>Solo Libros Populares</option>
                     </select>
                     <!-- Descripción del modo -->
                     <div class="mt-2 p-3 bg-base-200 rounded-lg text-sm" id="modo-descripcion">
-                        <p id="desc-filtrado"><strong>General:</strong> Busca en título, autor y sinopsis. Puedes combinar con filtros opcionales (géneros, valoración, popularidad, fuente).</p>
+                        <p id="desc-filtrado"><strong>General:</strong> Busca en título, autor y sinopsis. Puedes combinar con diferentes filtros opcionales.</p>
                         <p id="desc-booleana" class="hidden"><strong>Booleana:</strong> Usa operadores: <code>autor:García AND genero:Ficción</code>, <code>titulo:amor OR titulo:guerra</code>, <code>NOT genero:Infantil</code></p>
                         <p id="desc-populares" class="hidden"><strong>Populares:</strong> Muestra libros con muchos votos ordenados por valoración (útil para descubrir clásicos).</p>
                     </div>
