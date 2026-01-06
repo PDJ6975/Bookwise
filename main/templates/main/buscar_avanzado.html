@@ -19,17 +19,13 @@
                         <span class="label-text font-semibold">Modo de Búsqueda</span>
                     </label>
                     <select name="modo" id="modo-busqueda" class="select select-bordered w-full">
-                        <option value="filtrado" {% if modo == 'filtrado' %}selected{% endif %}>Búsqueda Filtrada (Multicampo + Filtros)</option>
-                        <option value="boost" {% if modo == 'boost' %}selected{% endif %}>Búsqueda con Ponderación</option>
-                        <option value="frase" {% if modo == 'frase' %}selected{% endif %}>Búsqueda de Frase Exacta</option>
+                        <option value="filtrado" {% if modo == 'filtrado' %}selected{% endif %}>Búsqueda General (Multicampo + Filtros)</option>
                         <option value="booleana" {% if modo == 'booleana' %}selected{% endif %}>Búsqueda Booleana (AND/OR/NOT)</option>
                         <option value="populares" {% if modo == 'populares' %}selected{% endif %}>Solo Libros Populares</option>
                     </select>
                     <!-- Descripción del modo -->
                     <div class="mt-2 p-3 bg-base-200 rounded-lg text-sm" id="modo-descripcion">
-                        <p id="desc-filtrado"><strong>Filtrado:</strong> Búsqueda de texto combinada con múltiples filtros (géneros, valoración, popularidad, fuente).</p>
-                        <p id="desc-boost" class="hidden"><strong>Funcionamiento:</strong> Busca en título (peso x2), autor (x1.5) y sinopsis (x1). Los resultados en título aparecen primero.</p>
-                        <p id="desc-frase" class="hidden"><strong>Frase Exacta:</strong> Busca la frase literal completa en el campo seleccionado (sinopsis por defecto).</p>
+                        <p id="desc-filtrado"><strong>General:</strong> Busca en título, autor y sinopsis. Puedes combinar con filtros opcionales (géneros, valoración, popularidad, fuente).</p>
                         <p id="desc-booleana" class="hidden"><strong>Booleana:</strong> Usa operadores: <code>autor:García AND genero:Ficción</code>, <code>titulo:amor OR titulo:guerra</code>, <code>NOT genero:Infantil</code></p>
                         <p id="desc-populares" class="hidden"><strong>Populares:</strong> Muestra libros con muchos votos ordenados por valoración (útil para descubrir clásicos).</p>
                     </div>
@@ -47,18 +43,6 @@
                         </svg>
                         <input type="search" name="q" value="{{ q }}" placeholder="Título, autor, sinopsis..." class="grow" id="input-busqueda" />
                     </label>
-                </div>
-
-                <!-- Campo para frase exacta -->
-                <div class="form-control mb-4 hidden" id="campo-frase">
-                    <label class="label">
-                        <span class="label-text font-semibold">Buscar en campo</span>
-                    </label>
-                    <select name="campo_frase" class="select select-bordered select-sm">
-                        <option value="sinopsis" {% if campo_frase == 'sinopsis' %}selected{% endif %}>Sinopsis</option>
-                        <option value="titulo" {% if campo_frase == 'titulo' %}selected{% endif %}>Título</option>
-                        <option value="autor" {% if campo_frase == 'autor' %}selected{% endif %}>Autor</option>
-                    </select>
                 </div>
 
                 <!-- Campos de Búsqueda (solo para modo filtrado) -->
@@ -112,14 +96,6 @@
                                 <span class="label-text-alt" id="val-display">0.0 ★</span>
                             </label>
                             <input type="range" name="valoracion_min" min="0" max="5" value="{{ valoracion_min }}" step="0.5" class="range range-primary" id="val-slider" />
-                            <div class="flex w-full justify-between text-xs px-2 mt-1">
-                                <span>0★</span>
-                                <span>1★</span>
-                                <span>2★</span>
-                                <span>3★</span>
-                                <span>4★</span>
-                                <span>5★</span>
-                            </div>
                         </div>
 
                         <!-- Solo Populares -->
@@ -328,15 +304,12 @@
     // Script para mostrar/ocultar campos según modo de búsqueda
     const modoSelect = document.getElementById('modo-busqueda');
     const campoBusqueda = document.getElementById('campo-busqueda');
-    const campoFrase = document.getElementById('campo-frase');
     const camposMulticampo = document.getElementById('campos-multicampo');
     const filtrosAvanzados = document.getElementById('filtros-avanzados');
     const inputBusqueda = document.getElementById('input-busqueda');
 
     // Descripciones
     const descFiltrado = document.getElementById('desc-filtrado');
-    const descBoost = document.getElementById('desc-boost');
-    const descFrase = document.getElementById('desc-frase');
     const descBooleana = document.getElementById('desc-booleana');
     const descPopulares = document.getElementById('desc-populares');
 
@@ -345,14 +318,11 @@
 
         // Ocultar todo primero
         campoBusqueda.classList.add('hidden');
-        campoFrase.classList.add('hidden');
         camposMulticampo.classList.add('hidden');
         filtrosAvanzados.classList.add('hidden');
 
         // Ocultar todas las descripciones
         descFiltrado.classList.add('hidden');
-        descBoost.classList.add('hidden');
-        descFrase.classList.add('hidden');
         descBooleana.classList.add('hidden');
         descPopulares.classList.add('hidden');
 
@@ -365,21 +335,6 @@
                 descFiltrado.classList.remove('hidden');
                 inputBusqueda.placeholder = 'Título, autor, sinopsis...';
                 inputBusqueda.required = false;
-                break;
-
-            case 'boost':
-                campoBusqueda.classList.remove('hidden');
-                descBoost.classList.remove('hidden');
-                inputBusqueda.placeholder = 'Ej: García Márquez, amor, soledad...';
-                inputBusqueda.required = true;
-                break;
-
-            case 'frase':
-                campoBusqueda.classList.remove('hidden');
-                campoFrase.classList.remove('hidden');
-                descFrase.classList.remove('hidden');
-                inputBusqueda.placeholder = 'Frase exacta a buscar...';
-                inputBusqueda.required = true;
                 break;
 
             case 'booleana':

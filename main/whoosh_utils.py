@@ -135,43 +135,6 @@ def limpiar_indice():
 
 # BÚSQUEDAS AVANZADAS
 
-def buscar_con_boost(query_str, campos_boost=None, limite=20):
-    """
-    Búsqueda multicampo con ponderación.
-
-    Args:
-        query_str: Texto a buscar
-        campos_boost: Dict con campos y su peso.
-                     Ej: {"titulo": 2.0, "autor": 1.5, "sinopsis": 1.0}
-        limite: Número máximo de resultados
-
-    Returns:
-        Lista de diccionarios con libros encontrados (incluye 'score')
-    """
-    if campos_boost is None:
-        campos_boost = {"titulo": 2.0, "autor": 1.5, "sinopsis": 1.0}
-
-    ix = abrir_indice()
-    with ix.searcher() as searcher:
-        # Crear parser con boost por campo
-        parser = MultifieldParser(
-            list(campos_boost.keys()),
-            ix.schema,
-            fieldboosts=campos_boost
-        )
-        query = parser.parse(query_str)
-        results = searcher.search(query, limit=limite)
-
-        # Incluir score en los resultados
-        libros = []
-        for hit in results:
-            libro = dict(hit)
-            libro['score'] = hit.score
-            libros.append(libro)
-
-    return libros
-
-
 def buscar_filtrado(query_str="", generos=None, valoracion_min=None,
                     valoracion_max=None, votos_min=None, fuente=None, limite=20):
     """
@@ -293,29 +256,6 @@ def buscar_ordenado(query_str, campo_orden="valoracion", descendente=True, limit
         # Configurar ordenación
         facet = sorting.FieldFacet(campo_orden, reverse=descendente)
         results = searcher.search(query, limit=limite, sortedby=facet)
-
-        libros = [dict(hit) for hit in results]
-
-    return libros
-
-
-def buscar_frase_exacta(frase, campo="sinopsis", limite=20):
-    """
-    Búsqueda de frase exacta en un campo específico.
-
-    Args:
-        frase: Frase exacta a buscar
-        campo: Campo donde buscar
-        limite: Número máximo de resultados
-    """
-    from whoosh.qparser import QueryParser
-
-    ix = abrir_indice()
-    with ix.searcher() as searcher:
-        parser = QueryParser(campo, ix.schema)
-        # Usar comillas para frase exacta
-        query = parser.parse(f'"{frase}"')
-        results = searcher.search(query, limit=limite)
 
         libros = [dict(hit) for hit in results]
 

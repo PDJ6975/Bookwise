@@ -7,8 +7,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from main.whoosh_utils import (
     obtener_generos, buscar_por_genero, buscar_filtrado,
-    buscar_con_boost, buscar_populares, buscar_ordenado,
-    buscar_frase_exacta, buscar_booleana
+    buscar_populares, buscar_ordenado, buscar_booleana
 )
 from main.models import LibroUsuario
 
@@ -190,7 +189,6 @@ def buscar_avanzado(request):
     # Preservar parámetros de búsqueda para mantener estado del formulario
     texto_busqueda = request.GET.get('q', '').strip()
     modo_busqueda = request.GET.get('modo', 'filtrado')
-    campo_frase = request.GET.get('campo_frase', 'sinopsis')
     valoracion_min = request.GET.get('valoracion_min', '0')
     solo_populares = request.GET.get('solo_populares', '')
     fuente = request.GET.get('fuente', '')
@@ -254,24 +252,6 @@ def buscar_avanzado(request):
                 parts.append(f"fuente:{fuente}")
             query_debug = " AND ".join(parts) if parts else "todos los libros"
 
-        elif modo_busqueda == 'boost':
-            # BÚSQUEDA CON PONDERACIÓN
-            tipo_busqueda = "Búsqueda Multicampo con Boost"
-            campos_boost = {
-                "titulo": 2.0,
-                "autor": 1.5,
-                "sinopsis": 1.0
-            }
-            resultados = buscar_con_boost(texto_busqueda, campos_boost, limite=50)
-            query_debug = f"'{texto_busqueda}' con boost: título(2.0), autor(1.5), sinopsis(1.0)"
-
-        elif modo_busqueda == 'frase':
-            # BÚSQUEDA DE FRASE EXACTA
-            tipo_busqueda = "Búsqueda de Frase Exacta"
-            campo_frase = request.GET.get('campo_frase', 'sinopsis')
-            resultados = buscar_frase_exacta(texto_busqueda, campo=campo_frase, limite=50)
-            query_debug = f'"{texto_busqueda}" en campo {campo_frase}'
-
         elif modo_busqueda == 'booleana':
             # BÚSQUEDA BOOLEANA
             tipo_busqueda = "Búsqueda Booleana (AND/OR/NOT)"
@@ -302,7 +282,6 @@ def buscar_avanzado(request):
         # Preservar estado del formulario
         'q': texto_busqueda,
         'modo': modo_busqueda,
-        'campo_frase': campo_frase,
         'valoracion_min': valoracion_min,
         'solo_populares': solo_populares,
         'fuente': fuente,
