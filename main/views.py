@@ -5,7 +5,11 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
-from main.whoosh_utils import obtener_generos, buscar_por_genero
+from main.whoosh_utils import (
+    obtener_generos, buscar_por_genero, buscar_filtrado,
+    buscar_con_boost, buscar_populares, buscar_ordenado,
+    buscar_frase_exacta, buscar_booleana
+)
 from main.models import LibroUsuario
 
 
@@ -174,3 +178,134 @@ def logout_view(request):
     auth_logout(request)
     messages.info(request, 'Has cerrado sesión')
     return redirect('index')
+
+
+def buscar_avanzado(request):
+    """Vista de Búsqueda Avanzada con filtros complejos"""
+    generos_disponibles = obtener_generos()
+    resultados = []
+    query_debug = ""
+    tipo_busqueda = ""
+
+    # Preservar parámetros de búsqueda para mantener estado del formulario
+    texto_busqueda = request.GET.get('q', '').strip()
+    modo_busqueda = request.GET.get('modo', 'filtrado')
+    campo_frase = request.GET.get('campo_frase', 'sinopsis')
+    valoracion_min = request.GET.get('valoracion_min', '0')
+    solo_populares = request.GET.get('solo_populares', '')
+    fuente = request.GET.get('fuente', '')
+    ordenar_por = request.GET.get('ordenar', 'relevancia')
+    generos_seleccionados = request.GET.getlist('generos')
+
+    if request.method == 'GET' and request.GET.get('buscar'):
+        # Obtener parámetros del formulario
+        texto_busqueda = request.GET.get('q', '').strip()
+        modo_busqueda = request.GET.get('modo', 'filtrado')
+
+        # Campos de búsqueda
+        campos = []
+        if request.GET.get('campo_titulo'):
+            campos.append('titulo')
+        if request.GET.get('campo_autor'):
+            campos.append('autor')
+        if request.GET.get('campo_sinopsis'):
+            campos.append('sinopsis')
+
+        # Filtros
+        generos_seleccionados = request.GET.getlist('generos')
+        valoracion_min = request.GET.get('valoracion_min')
+        solo_populares = request.GET.get('solo_populares')
+        fuente = request.GET.get('fuente', '')
+        ordenar_por = request.GET.get('ordenar', 'relevancia')
+
+        # Convertir valoración a float
+        try:
+            val_min = float(valoracion_min) if valoracion_min else None
+        except ValueError:
+            val_min = None
+
+        # Votos mínimos si solo_populares está activado
+        votos_min = 50 if solo_populares else None
+
+        # Ejecutar búsqueda según el modo
+        if modo_busqueda == 'filtrado':
+            # BÚSQUEDA FILTRADA
+            tipo_busqueda = "Búsqueda Filtrada Multicampo"
+            resultados = buscar_filtrado(
+                query_str=texto_busqueda,
+                generos=generos_seleccionados if generos_seleccionados else None,
+                valoracion_min=val_min,
+                votos_min=votos_min,
+                fuente=fuente if fuente else None,
+                limite=50
+            )
+
+            # Construir query debug
+            parts = []
+            if texto_busqueda:
+                parts.append(f"texto:'{texto_busqueda}'")
+            if generos_seleccionados:
+                parts.append(f"géneros:{generos_seleccionados}")
+            if val_min:
+                parts.append(f"valoración≥{val_min}")
+            if votos_min:
+                parts.append(f"votos≥{votos_min}")
+            if fuente:
+                parts.append(f"fuente:{fuente}")
+            query_debug = " AND ".join(parts) if parts else "todos los libros"
+
+        elif modo_busqueda == 'boost':
+            # BÚSQUEDA CON PONDERACIÓN
+            tipo_busqueda = "Búsqueda Multicampo con Boost"
+            campos_boost = {
+                "titulo": 2.0,
+                "autor": 1.5,
+                "sinopsis": 1.0
+            }
+            resultados = buscar_con_boost(texto_busqueda, campos_boost, limite=50)
+            query_debug = f"'{texto_busqueda}' con boost: título(2.0), autor(1.5), sinopsis(1.0)"
+
+        elif modo_busqueda == 'frase':
+            # BÚSQUEDA DE FRASE EXACTA
+            tipo_busqueda = "Búsqueda de Frase Exacta"
+            campo_frase = request.GET.get('campo_frase', 'sinopsis')
+            resultados = buscar_frase_exacta(texto_busqueda, campo=campo_frase, limite=50)
+            query_debug = f'"{texto_busqueda}" en campo {campo_frase}'
+
+        elif modo_busqueda == 'booleana':
+            # BÚSQUEDA BOOLEANA
+            tipo_busqueda = "Búsqueda Booleana (AND/OR/NOT)"
+            resultados = buscar_booleana(texto_busqueda, limite=50)
+            query_debug = texto_busqueda
+
+        elif modo_busqueda == 'populares':
+            # BÚSQUEDA DE POPULARES
+            tipo_busqueda = "Libros Populares (ordenados por valoración)"
+            resultados = buscar_populares(votos_min=votos_min or 50, limite=50)
+            query_debug = f"libros con ≥{votos_min or 50} votos, ordenados por valoración"
+
+        # Ordenar resultados si se especifica
+        if ordenar_por != 'relevancia' and resultados and modo_busqueda == 'filtrado':
+            if ordenar_por == 'valoracion':
+                resultados = sorted(resultados, key=lambda x: x.get('valoracion', 0), reverse=True)
+            elif ordenar_por == 'popularidad':
+                resultados = sorted(resultados, key=lambda x: x.get('num_votos', 0), reverse=True)
+            elif ordenar_por == 'titulo':
+                resultados = sorted(resultados, key=lambda x: x.get('titulo', ''))
+
+    return render(request, 'main/buscar_avanzado.html', {
+        'generos': generos_disponibles,
+        'resultados': resultados,
+        'query_debug': query_debug,
+        'tipo_busqueda': tipo_busqueda,
+        'num_resultados': len(resultados),
+        # Preservar estado del formulario
+        'q': texto_busqueda,
+        'modo': modo_busqueda,
+        'campo_frase': campo_frase,
+        'valoracion_min': valoracion_min,
+        'solo_populares': solo_populares,
+        'fuente': fuente,
+        'ordenar': ordenar_por,
+        'generos_seleccionados': generos_seleccionados,
+    })

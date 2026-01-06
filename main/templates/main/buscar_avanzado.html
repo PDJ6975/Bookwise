@@ -1,0 +1,414 @@
+{% extends 'base.html' %}
+
+{% block title %}Búsqueda Avanzada - BookWise{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Consultas Avanzadas</h1>
+
+    <!-- Formulario de Búsqueda -->
+    <form method="GET" action="{% url 'buscar_avanzado' %}" class="mb-8">
+        <input type="hidden" name="buscar" value="1">
+
+        <!-- Card Principal -->
+        <div class="card bg-base-100 shadow-md mb-6">
+            <div class="card-body">
+                <!-- Modo de Búsqueda -->
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text font-semibold">Modo de Búsqueda</span>
+                    </label>
+                    <select name="modo" id="modo-busqueda" class="select select-bordered w-full">
+                        <option value="filtrado" {% if modo == 'filtrado' %}selected{% endif %}>Búsqueda Filtrada (Multicampo + Filtros)</option>
+                        <option value="boost" {% if modo == 'boost' %}selected{% endif %}>Búsqueda con Ponderación</option>
+                        <option value="frase" {% if modo == 'frase' %}selected{% endif %}>Búsqueda de Frase Exacta</option>
+                        <option value="booleana" {% if modo == 'booleana' %}selected{% endif %}>Búsqueda Booleana (AND/OR/NOT)</option>
+                        <option value="populares" {% if modo == 'populares' %}selected{% endif %}>Solo Libros Populares</option>
+                    </select>
+                    <!-- Descripción del modo -->
+                    <div class="mt-2 p-3 bg-base-200 rounded-lg text-sm" id="modo-descripcion">
+                        <p id="desc-filtrado"><strong>Filtrado:</strong> Búsqueda de texto combinada con múltiples filtros (géneros, valoración, popularidad, fuente).</p>
+                        <p id="desc-boost" class="hidden"><strong>Funcionamiento:</strong> Busca en título (peso x2), autor (x1.5) y sinopsis (x1). Los resultados en título aparecen primero.</p>
+                        <p id="desc-frase" class="hidden"><strong>Frase Exacta:</strong> Busca la frase literal completa en el campo seleccionado (sinopsis por defecto).</p>
+                        <p id="desc-booleana" class="hidden"><strong>Booleana:</strong> Usa operadores: <code>autor:García AND genero:Ficción</code>, <code>titulo:amor OR titulo:guerra</code>, <code>NOT genero:Infantil</code></p>
+                        <p id="desc-populares" class="hidden"><strong>Populares:</strong> Muestra libros con muchos votos ordenados por valoración (útil para descubrir clásicos).</p>
+                    </div>
+                </div>
+
+                <!-- Input de Búsqueda -->
+                <div class="form-control mb-4" id="campo-busqueda">
+                    <label class="label">
+                        <span class="label-text font-semibold">Buscar</span>
+                    </label>
+                    <label class="input input-bordered flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.3-4.3"></path>
+                        </svg>
+                        <input type="search" name="q" value="{{ q }}" placeholder="Título, autor, sinopsis..." class="grow" id="input-busqueda" />
+                    </label>
+                </div>
+
+                <!-- Campo para frase exacta -->
+                <div class="form-control mb-4 hidden" id="campo-frase">
+                    <label class="label">
+                        <span class="label-text font-semibold">Buscar en campo</span>
+                    </label>
+                    <select name="campo_frase" class="select select-bordered select-sm">
+                        <option value="sinopsis" {% if campo_frase == 'sinopsis' %}selected{% endif %}>Sinopsis</option>
+                        <option value="titulo" {% if campo_frase == 'titulo' %}selected{% endif %}>Título</option>
+                        <option value="autor" {% if campo_frase == 'autor' %}selected{% endif %}>Autor</option>
+                    </select>
+                </div>
+
+                <!-- Campos de Búsqueda (solo para modo filtrado) -->
+                <div class="form-control mb-4 hidden" id="campos-multicampo">
+                    <label class="label">
+                        <span class="label-text font-semibold">Buscar en campos</span>
+                    </label>
+                    <div class="flex gap-4">
+                        <label class="cursor-pointer flex items-center gap-2">
+                            <input type="checkbox" name="campo_titulo" class="checkbox checkbox-primary" checked />
+                            <span class="label-text">Título</span>
+                        </label>
+                        <label class="cursor-pointer flex items-center gap-2">
+                            <input type="checkbox" name="campo_autor" class="checkbox checkbox-primary" checked />
+                            <span class="label-text">Autor</span>
+                        </label>
+                        <label class="cursor-pointer flex items-center gap-2">
+                            <input type="checkbox" name="campo_sinopsis" class="checkbox checkbox-primary" checked />
+                            <span class="label-text">Sinopsis</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Collapse: Filtros Avanzados (solo para modo filtrado) -->
+                <div class="collapse collapse-arrow bg-base-200 hidden" id="filtros-avanzados">
+                    <input type="checkbox" checked />
+                    <div class="collapse-title font-semibold">
+                        Filtros Avanzados
+                    </div>
+                    <div class="collapse-content">
+                        <!-- Géneros -->
+                        <div class="form-control mb-4">
+                            <label class="label">
+                                <span class="label-text font-semibold">Géneros</span>
+                                <span class="label-text-alt">Selecciona uno o más (OR)</span>
+                            </label>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 bg-base-100 rounded-lg border border-base-300">
+                                {% for genero in generos %}
+                                <label class="cursor-pointer flex items-center gap-2">
+                                    <input type="checkbox" name="generos" value="{{ genero }}" class="checkbox checkbox-sm checkbox-primary" {% if genero in generos_seleccionados %}checked{% endif %} />
+                                    <span class="label-text text-sm">{{ genero }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Valoración Mínima -->
+                        <div class="form-control mb-4">
+                            <label class="label">
+                                <span class="label-text font-semibold">Valoración Mínima</span>
+                                <span class="label-text-alt" id="val-display">0.0 ★</span>
+                            </label>
+                            <input type="range" name="valoracion_min" min="0" max="5" value="{{ valoracion_min }}" step="0.5" class="range range-primary" id="val-slider" />
+                            <div class="flex w-full justify-between text-xs px-2 mt-1">
+                                <span>0★</span>
+                                <span>1★</span>
+                                <span>2★</span>
+                                <span>3★</span>
+                                <span>4★</span>
+                                <span>5★</span>
+                            </div>
+                        </div>
+
+                        <!-- Solo Populares -->
+                        <div class="form-control mb-4" id="toggle-populares">
+                            <label class="cursor-pointer flex items-center gap-3">
+                                <input type="checkbox" name="solo_populares" value="1" class="toggle toggle-primary" {% if solo_populares %}checked{% endif %} />
+                                <span class="label-text font-semibold">Solo libros populares (≥50 votos)</span>
+                            </label>
+                        </div>
+
+                        <!-- Fuente -->
+                        <div class="form-control mb-4">
+                            <label class="label">
+                                <span class="label-text font-semibold">Fuente de Datos</span>
+                            </label>
+                            <select name="fuente" class="select select-bordered select-sm">
+                                <option value="" {% if fuente == '' %}selected{% endif %}>Todas las fuentes</option>
+                                <option value="quelibroleo" {% if fuente == 'quelibroleo' %}selected{% endif %}>QueLibroLeo</option>
+                                <option value="lecturalia" {% if fuente == 'lecturalia' %}selected{% endif %}>Lecturalia</option>
+                            </select>
+                        </div>
+
+                        <!-- Ordenar Por -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-semibold">Ordenar Resultados</span>
+                            </label>
+                            <select name="ordenar" class="select select-bordered select-sm">
+                                <option value="relevancia" {% if ordenar == 'relevancia' %}selected{% endif %}>Relevancia</option>
+                                <option value="valoracion" {% if ordenar == 'valoracion' %}selected{% endif %}>Valoración (mayor primero)</option>
+                                <option value="popularidad" {% if ordenar == 'popularidad' %}selected{% endif %}>Popularidad (más votos)</option>
+                                <option value="titulo" {% if ordenar == 'titulo' %}selected{% endif %}>Título (A-Z)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón Buscar -->
+        <div class="flex justify-center mb-6">
+            <button type="submit" class="btn btn-primary btn-lg gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Buscar
+            </button>
+        </div>
+    </form>
+
+    <!-- Resultados -->
+    {% if tipo_busqueda %}
+    <div class="mb-6">
+        <!-- Info de Búsqueda -->
+        <div class="alert alert-info mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div class="flex-1">
+                <h3 class="font-bold">{{ tipo_busqueda }}</h3>
+                <div class="text-xs">
+                    <code class="bg-base-200 px-2 py-1 rounded">{{ query_debug }}</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contador de Resultados -->
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold">Resultados</h2>
+            <span class="badge badge-lg">{{ num_resultados }} libros encontrados</span>
+        </div>
+
+        {% if resultados %}
+        <!-- Grid de Libros -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {% for libro in resultados %}
+            <div class="card bg-base-100 shadow-sm cursor-pointer hover:shadow-lg transition-shadow"
+                 onclick="document.getElementById('modal_resultado_{{ forloop.counter }}').showModal()">
+                <figure class="px-2 pt-2">
+                    {% if libro.portada %}
+                    <img src="{{ libro.portada }}" alt="{{ libro.titulo }}" class="rounded-lg h-48 w-full object-cover">
+                    {% else %}
+                    <div class="rounded-lg h-48 w-full bg-base-300 flex items-center justify-center">
+                        <span class="text-4xl">📖</span>
+                    </div>
+                    {% endif %}
+                </figure>
+                <div class="card-body p-3">
+                    <h3 class="card-title text-sm line-clamp-2">{{ libro.titulo }}</h3>
+                    <p class="text-xs text-base-content/70 line-clamp-1">{{ libro.autor }}</p>
+                    <div class="flex items-center gap-1 mt-1">
+                        <span class="text-warning">★</span>
+                        <span class="text-sm font-semibold">{{ libro.valoracion }}/5</span>
+                        <span class="text-xs text-base-content/50">({{ libro.num_votos }})</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal para cada libro -->
+            <dialog id="modal_resultado_{{ forloop.counter }}" class="modal">
+                <div class="modal-box max-w-2xl">
+                    <form method="dialog">
+                        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                    </form>
+
+                    <div class="flex gap-6">
+                        <div class="flex-shrink-0">
+                            {% if libro.portada %}
+                            <img src="{{ libro.portada }}" alt="{{ libro.titulo }}" class="rounded-lg w-40 h-60 object-cover">
+                            {% else %}
+                            <div class="rounded-lg w-40 h-60 bg-base-300 flex items-center justify-center">
+                                <span class="text-6xl">📖</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold mb-2">{{ libro.titulo }}</h3>
+                            <p class="text-base-content/70 mb-2">{{ libro.autor }}</p>
+
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="badge badge-outline">{{ libro.genero }}</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-warning">★</span>
+                                    <span class="font-semibold">{{ libro.valoracion }}/5</span>
+                                    <span class="text-xs text-base-content/50">({{ libro.num_votos }} votos)</span>
+                                </div>
+                                <span class="badge badge-sm">{{ libro.fuente }}</span>
+                            </div>
+
+                            <p class="text-sm mb-4">
+                                {% if libro.sinopsis %}
+                                    {{ libro.sinopsis|truncatewords:80 }}
+                                {% else %}
+                                    <em>Sin sinopsis disponible</em>
+                                {% endif %}
+                            </p>
+
+                            <div class="card-actions">
+                                {% if user.is_authenticated %}
+                                <form action="{% url 'agregar_libro' %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="titulo" value="{{ libro.titulo }}">
+                                    <input type="hidden" name="autor" value="{{ libro.autor }}">
+                                    <input type="hidden" name="portada" value="{{ libro.portada }}">
+                                    <input type="hidden" name="genero" value="{{ libro.genero }}">
+                                    <input type="hidden" name="sinopsis" value="{{ libro.sinopsis }}">
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Añadir a Mi Librería
+                                    </button>
+                                </form>
+                                {% else %}
+                                <a href="{% url 'login' %}" class="btn btn-primary btn-sm">Iniciar sesión para guardar</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Sin Resultados -->
+        <div class="card bg-base-200 shadow-sm">
+            <div class="card-body items-center text-center py-12">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 class="text-xl font-bold mb-2">No se encontraron resultados</h3>
+                <p class="text-base-content/70">Intenta con otros términos o ajusta los filtros</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <!-- Estado inicial -->
+    <div class="card bg-base-200 shadow-sm">
+        <div class="card-body items-center text-center py-12">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-primary mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <h3 class="text-xl font-bold mb-2">Búsqueda Avanzada de Whoosh</h3>
+            <div class="mt-4 text-sm text-base-content/60">
+                <p>💡 <strong>Tip:</strong> Prueba diferentes modos de búsqueda para explorar todas las capacidades de la aplicación</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Scripts -->
+<script>
+    // Script para el slider de valoración
+    const slider = document.getElementById('val-slider');
+    const display = document.getElementById('val-display');
+
+    if (slider && display) {
+        // Mostrar valor inicial
+        display.textContent = slider.value + ' ★';
+
+        // Actualizar al cambiar
+        slider.addEventListener('input', (e) => {
+            display.textContent = e.target.value + ' ★';
+        });
+    }
+
+    // Script para mostrar/ocultar campos según modo de búsqueda
+    const modoSelect = document.getElementById('modo-busqueda');
+    const campoBusqueda = document.getElementById('campo-busqueda');
+    const campoFrase = document.getElementById('campo-frase');
+    const camposMulticampo = document.getElementById('campos-multicampo');
+    const filtrosAvanzados = document.getElementById('filtros-avanzados');
+    const inputBusqueda = document.getElementById('input-busqueda');
+
+    // Descripciones
+    const descFiltrado = document.getElementById('desc-filtrado');
+    const descBoost = document.getElementById('desc-boost');
+    const descFrase = document.getElementById('desc-frase');
+    const descBooleana = document.getElementById('desc-booleana');
+    const descPopulares = document.getElementById('desc-populares');
+
+    function actualizarCampos() {
+        const modo = modoSelect.value;
+
+        // Ocultar todo primero
+        campoBusqueda.classList.add('hidden');
+        campoFrase.classList.add('hidden');
+        camposMulticampo.classList.add('hidden');
+        filtrosAvanzados.classList.add('hidden');
+
+        // Ocultar todas las descripciones
+        descFiltrado.classList.add('hidden');
+        descBoost.classList.add('hidden');
+        descFrase.classList.add('hidden');
+        descBooleana.classList.add('hidden');
+        descPopulares.classList.add('hidden');
+
+        // Mostrar campos según modo
+        switch(modo) {
+            case 'filtrado':
+                campoBusqueda.classList.remove('hidden');
+                camposMulticampo.classList.remove('hidden');
+                filtrosAvanzados.classList.remove('hidden');
+                descFiltrado.classList.remove('hidden');
+                inputBusqueda.placeholder = 'Título, autor, sinopsis...';
+                inputBusqueda.required = false;
+                break;
+
+            case 'boost':
+                campoBusqueda.classList.remove('hidden');
+                descBoost.classList.remove('hidden');
+                inputBusqueda.placeholder = 'Ej: García Márquez, amor, soledad...';
+                inputBusqueda.required = true;
+                break;
+
+            case 'frase':
+                campoBusqueda.classList.remove('hidden');
+                campoFrase.classList.remove('hidden');
+                descFrase.classList.remove('hidden');
+                inputBusqueda.placeholder = 'Frase exacta a buscar...';
+                inputBusqueda.required = true;
+                break;
+
+            case 'booleana':
+                campoBusqueda.classList.remove('hidden');
+                descBooleana.classList.remove('hidden');
+                inputBusqueda.placeholder = 'Ej: autor:García AND genero:Ficción';
+                inputBusqueda.required = true;
+                break;
+
+            case 'populares':
+                // No muestra input de búsqueda, usa filtros
+                filtrosAvanzados.classList.remove('hidden');
+                descPopulares.classList.remove('hidden');
+                break;
+        }
+    }
+
+    // Ejecutar al cargar y al cambiar
+    if (modoSelect) {
+        actualizarCampos();
+        modoSelect.addEventListener('change', actualizarCampos);
+    }
+</script>
+{% endblock %}
