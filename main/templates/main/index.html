@@ -1,7 +1,7 @@
 {% extends 'main/base.html' %}
 {% load static %}
 
-{% block title %}BookWise - Descubrir{% endblock %}
+{% block title %}BookWise{% endblock %}
 
 {% block content %}
 <!-- Sección de Recomendaciones -->
@@ -47,7 +47,7 @@
 
                     <div class="flex-1">
                         <div class="mb-2">
-                            <div class="flex items-center gap-2 mb-1">
+                            <div class="flex items-center gap-2 mb-1 mr-8">
                                 <h3 class="text-xl font-bold flex-1 min-w-0 line-clamp-2">{{ libro.titulo }}</h3>
                                 <span class="badge badge-primary flex-shrink-0 whitespace-nowrap">{{ libro.score|floatformat:0 }}%</span>
                             </div>
