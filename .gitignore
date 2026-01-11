@@ -2,3 +2,4 @@ Index
 __pycache__
 db.*
 .DS_Stores
+venv
